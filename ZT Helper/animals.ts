@@ -609,5 +609,101 @@ export default {
         "level3": "9+"
       }
     },
+    {
+      "id": "tufted-capuchin",
+      "name": "Tufted Capuchin",
+      "category": categories.PRIMATE,
+      "biome": biomes.RAINFOREST,
+      "level": 1,
+      "basePopularityValue": 2,
+      "educationValue": 2,
+      "conservationValue": null,
+      "costPerTile": 1,
+      "maxPerTile": 3,
+      "experience": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 4
+      },
+      "freeSpace": {
+        "level1": 0,
+        "level2": 1,
+        "level3": 2
+      },
+      "shelters": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": 4,
+        "level2": 5,
+        "level3": "9+"
+      }
+    },
+    {
+      "id": "california-sea-lion",
+      "name": "California Sea Lion",
+      "category": [categories.AQUATIC, categories.CARNIVORE],
+      "biome": biomes.WATER,
+      "level": 1,
+      "basePopularityValue": 3,
+      "educationValue": 4,
+      "conservationValue": null,
+      "costPerTile": null,
+      "maxPerTile": 3,
+      "experience": {
+        "level1": 1,
+        "level2": 3,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": 4,
+        "level2": 7,
+        "level3": "12+"
+      }
+    },
+    {
+      "id": "magellanic-penguin",
+      "name": "Magellanic Penguin",
+      "category": categories.BIRD,
+      "biome": biomes.TUNDRA_STEPPE,
+      "level": 1,
+      "basePopularityValue": 2,
+      "educationValue": 3,
+      "conservationValue": null,
+      "costPerTile": 1,
+      "maxPerTile": 4,
+      "experience": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 4
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": 4,
+        "level2": 5,
+        "level3": "12+"
+      }
+    },
   ]
 };
