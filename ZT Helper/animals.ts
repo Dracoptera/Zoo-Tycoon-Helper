@@ -705,5 +705,261 @@ export default {
         "level3": "12+"
       }
     },
+    {
+      "id": "snow-leopard",
+      "name": "Snow Leopard",
+      "category": categories.CARNIVORE,
+      "biome": biomes.MONTANE_FOREST,
+      "level": 2,
+      "basePopularityValue": 3,
+      "educationValue": 2,
+      "conservationValue": 1,
+      "costPerTile": 4,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 6
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 3,
+        "level3": 4
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      }
+    },
+    {
+      "id": "red-panda",
+      "name": "Red Panda",
+      "category": categories.CARNIVORE,
+      "biome": biomes.MONTANE_FOREST,
+      "level": 2,
+      "basePopularityValue": 2,
+      "educationValue": 2,
+      "conservationValue": 2,
+      "costPerTile": 2,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 3,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": 1,
+        "level2": null,
+        "level3": 2
+      },
+      "shelters": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      }
+    },
+    {
+      "id": "polar-bear",
+      "name": "Polar Bear",
+      "category": categories.CARNIVORE,
+      "biome": biomes.TUNDRA_STEPPE,
+      "level": 2,
+      "basePopularityValue": 5,
+      "educationValue": 3,
+      "conservationValue": 1,
+      "costPerTile": 5,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 6
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 4,
+        "level3": 5
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      }
+    },
+    {
+      "id": "black-rhinoceros",
+      "name": "Black Rhinoceros",
+      "category": categories.UNGULATE,
+      "biome": biomes.SAVANNAH,
+      "level": 2,
+      "basePopularityValue": 3,
+      "educationValue": 3,
+      "conservationValue": 3,
+      "costPerTile": 3,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 6
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      }
+    },
+    {
+      "id": "komodo-dragon",
+      "name": "Komodo Dragon",
+      "category": categories.REPTILE,
+      "biome": biomes.DRY_FOREST,
+      "level": 2,
+      "basePopularityValue": 2,
+      "educationValue": 2,
+      "conservationValue": 2,
+      "costPerTile": 2,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 3,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      }
+    },
+    {
+      "id": "cheetah",
+      "name": "Cheetah",
+      "category": categories.CARNIVORE,
+      "biome": biomes.SAVANNAH,
+      "level": 2,
+      "basePopularityValue": 3,
+      "educationValue": 2,
+      "conservationValue": 1,
+      "costPerTile": 3,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 6
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": null,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 1,
+        "level3": "2+"
+      }
+    },
+    {
+      "id": "southern-cassowary",
+      "name": "Southern Cassowary",
+      "category": categories.BIRD,
+      "biome": biomes.RAINFOREST,
+      "level": 2,
+      "basePopularityValue": 2,
+      "educationValue": 2,
+      "conservationValue": 2,
+      "costPerTile": 2,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 6
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      }
+    },
+    {
+      "id": "south-american-tapir",
+      "name": "South American Tapir",
+      "category": categories.UNGULATE,
+      "biome": [biomes.RAINFOREST, biomes.DRY_FOREST],
+      "level": 2,
+      "basePopularityValue": 2,
+      "educationValue": 2,
+      "conservationValue": 1,
+      "costPerTile": 1,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 3,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": null,
+        "level2": null,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      }
+    },
   ]
 };
