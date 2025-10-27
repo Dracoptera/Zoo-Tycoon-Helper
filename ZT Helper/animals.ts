@@ -961,5 +961,197 @@ export default {
         "level3": 2
       }
     },
+    {
+      "id": "okapi",
+      "name": "Okapi",
+      "category": categories.UNGULATE,
+      "biome": biomes.RAINFOREST,
+      "level": 2,
+      "basePopularityValue": 3,
+      "educationValue": 2,
+      "conservationValue": 2,
+      "costPerTile": 3,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 6
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      }
+    },
+    {
+      "id": "tiger",
+      "name": "Tiger",
+      "category": categories.CARNIVORE,
+      "biome": biomes.RAINFOREST,
+      "level": 2,
+      "basePopularityValue": 3,
+      "educationValue": 2,
+      "conservationValue": 2,
+      "costPerTile": 4,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 6
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 3,
+        "level3": 4
+      },
+      "shelters": {
+        "level1": null,
+        "level2": null,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      }
+    },
+    {
+      "id": "african-manatee",
+      "name": "Manatee",
+      "category": categories.AQUATIC,
+      "biome": biomes.WATER,
+      "level": 2,
+      "basePopularityValue": 3,
+      "educationValue": 2,
+      "conservationValue": 1,
+      "costPerTile": null,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 2,
+        "level3": "3+"
+      }
+    },
+    {
+      "id": "koala",
+      "name": "Koala",
+      "category": categories.MARSUPIAL,
+      "biome": biomes.DRY_FOREST,
+      "level": 2,
+      "basePopularityValue": 3,
+      "educationValue": 2,
+      "conservationValue": 2,
+      "costPerTile": 2,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 3,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": 1,
+        "level2": null,
+        "level3": 2
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 2,
+        "level3": "3+"
+      }
+    },
+    {
+      "id": "galapagos-tortoise",
+      "name": "Galápagos Tortoise",
+      "category": categories.REPTILE,
+      "biome": biomes.DRY_FOREST,
+      "level": 2,
+      "basePopularityValue": 3,
+      "educationValue": 1,
+      "conservationValue": 2,
+      "costPerTile": 3,
+      "maxPerTile": 2,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 6
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": null,
+        "level3": 2
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 2,
+        "level3": "3+"
+      }
+    },
+    {
+      "id": "sea-otter",
+      "name": "Sea Otter",
+      "category": [categories.CARNIVORE, categories.AQUATIC],
+      "biome": biomes.WATER,
+      "level": 2,
+      "basePopularityValue": 3,
+      "educationValue": 3,
+      "conservationValue": 2,
+      "costPerTile": null,
+      "maxPerTile": 2,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": null,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 2,
+        "level3": "4+"
+      }
+    },
   ]
 };
