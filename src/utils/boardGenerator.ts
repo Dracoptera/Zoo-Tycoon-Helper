@@ -8,6 +8,7 @@ type GenerationOptions = {
   preferredBiomes?: Biome[]
   excludeBiomes?: Biome[]
   seed?: number
+  strict?: boolean  // If true, ensures no warnings (balanced board)
 }
 
 // Simple random number generator from seed
@@ -51,9 +52,9 @@ export function generateBoard(
   allCoSpecies: CoSpecies[],
   options: GenerationOptions = {}
 ): SelectedBoard | null {
-  const { preferredBiomes = [], excludeBiomes = [], seed } = options
+  const { preferredBiomes = [], excludeBiomes = [], seed, strict = false } = options
   const random = seed !== undefined ? seededRandom(seed) : Math.random
-  const maxAttempts = 100
+  const maxAttempts = strict ? 500 : 100  // More attempts for strict mode
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const board: SelectedBoard = {
@@ -139,6 +140,10 @@ export function generateBoard(
     // Validate the board
     const validation = validateBoard(board)
     if (validation.valid) {
+      // In strict mode, also check that there are no warnings
+      if (strict && validation.warnings.length > 0) {
+        continue
+      }
       return board
     }
   }

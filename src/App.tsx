@@ -17,16 +17,17 @@ const biomeColors: Record<string, string> = {
 }
 
 // Helper function to group animals by biome
+// Animals with multiple biomes are assigned to their first biome only to avoid duplication
 function groupAnimalsByBiome<T extends { biome: string | string[] }>(items: T[]): [string, T[]][] {
   const grouped = new Map<string, T[]>()
   items.forEach(item => {
     const biomes = Array.isArray(item.biome) ? item.biome : [item.biome]
-    biomes.forEach(biome => {
-      if (!grouped.has(biome)) {
-        grouped.set(biome, [])
-      }
-      grouped.get(biome)!.push(item)
-    })
+    // Assign to first biome only to avoid duplication
+    const firstBiome = biomes[0]
+    if (!grouped.has(firstBiome)) {
+      grouped.set(firstBiome, [])
+    }
+    grouped.get(firstBiome)!.push(item)
   })
   return Array.from(grouped.entries())
 }
@@ -62,6 +63,24 @@ export default function App() {
       const allCoSpecies = coSpeciesData.coSpecies as CoSpecies[]
       const newBoard = generateBoard(allAnimals, allCoSpecies, {
         seed: Date.now()
+      })
+      if (newBoard) {
+        setBoard(newBoard)
+        const validation = validateBoard(newBoard)
+        setValidationResult(validation)
+      }
+      setIsGenerating(false)
+    }, 100)
+  }
+
+  const handleGenerateBalancedBoard = () => {
+    setIsGenerating(true)
+    setTimeout(() => {
+      const allAnimals = animalsData.animals as Animal[]
+      const allCoSpecies = coSpeciesData.coSpecies as CoSpecies[]
+      const newBoard = generateBoard(allAnimals, allCoSpecies, {
+        seed: Date.now(),
+        strict: true
       })
       if (newBoard) {
         setBoard(newBoard)
@@ -111,9 +130,17 @@ Co-Species: ${exportData.coSpecies}
           className="primary" 
           onClick={handleGenerateBoard}
           disabled={isGenerating}
-          style={{ fontSize: '1.2rem', padding: '15px 40px' }}
+          style={{ fontSize: '1.2rem', padding: '15px 40px', marginRight: '10px' }}
         >
           {isGenerating ? 'Generating...' : '🎲 Generate New Board'}
+        </button>
+        <button 
+          className="primary" 
+          onClick={handleGenerateBalancedBoard}
+          disabled={isGenerating}
+          style={{ fontSize: '1.2rem', padding: '15px 40px', background: '#28a745' }}
+        >
+          {isGenerating ? 'Generating...' : '⚖️ Generate Balanced Board'}
         </button>
       </div>
 
