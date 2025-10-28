@@ -29,7 +29,7 @@ export interface Animal {
   groupSize: GroupSizeLevelValues;
   requirement?: {
     count: number;
-    category: Category;
+    category: Category | Category[];
   };
   unlockPopularity?: number;
 }
@@ -1631,6 +1631,150 @@ export default {
       "requirement": {
         "count": 2,
         "category": categories.MARSUPIAL
+      }
+    },
+    {
+      "id": "madagascar-pochard",
+      "name": "Madagascar Pochard",
+      "category": categories.BIRD,
+      "biome": biomes.RAINFOREST,
+      "level": 3,
+      "basePopularityValue": 1,
+      "educationValue": 1,
+      "conservationValue": 4,
+      "costPerTile": 1,
+      "maxPerTile": 4,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": null,
+        "level3": "2+"
+      },
+      "requirement": {
+        "count": 3,
+        "category": categories.BIRD
+      }
+    },
+    {
+      "id": "green-sea-turtle",
+      "name": "Green Sea Turtle",
+      "category": categories.REPTILE,
+      "biome": biomes.WATER,
+      "level": 3,
+      "basePopularityValue": 2,
+      "educationValue": 2,
+      "conservationValue": 3,
+      "costPerTile": null,
+      "maxPerTile": 2,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": null,
+        "level3": "2+"
+      },
+      "requirement": {
+        "count": 4,
+        "category": [categories.REPTILE, categories.AQUATIC]
+      }
+    },
+    {
+      "id": "zebra-shark",
+      "name": "Zebra Shark",
+      "category": [categories.FISH, categories.AQUATIC],
+      "biome": biomes.WATER,
+      "level": 3,
+      "basePopularityValue": 2,
+      "educationValue": 2,
+      "conservationValue": 3,
+      "costPerTile": null,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 6
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "requirement": {
+        "count": 4,
+        "category": [categories.FISH, categories.AQUATIC]
+      }
+    },
+    {
+      "id": "arabian-oryx",
+      "name": "Arabian Oryx",
+      "category": categories.UNGULATE,
+      "biome": biomes.SAVANNAH,
+      "level": 3,
+      "basePopularityValue": 2,
+      "educationValue": 2,
+      "conservationValue": 3,
+      "costPerTile": 2,
+      "maxPerTile": 2,
+      "experience": {
+        "level1": 1,
+        "level2": 3,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": 3,
+        "level2": 4,
+        "level3": "5+"
+      },
+      "requirement": {
+        "count": 2,
+        "category": categories.UNGULATE
       }
     },
   ]
