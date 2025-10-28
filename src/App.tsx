@@ -85,6 +85,31 @@ export default function App() {
     }, 100)
   }
 
+  const handleGenerateBaseGameCompatible = () => {
+    setIsGenerating(true)
+    setTimeout(() => {
+      const allAnimals = animalsData.animals as Animal[]
+      const allCoSpecies = coSpeciesData.coSpecies as CoSpecies[]
+      const newBoard = generateBoard(allAnimals, allCoSpecies, {
+        seed: Date.now(),
+        strict: true,
+        requiredAnimals: requiredAnimalIds,
+        selectedBiomes: selectedBiomes.length > 0 ? selectedBiomes : undefined,
+        compatibleWithBaseGame: true
+      })
+      if (newBoard) {
+        setBoard(newBoard)
+        // Pass available co-species to validation so it knows which biomes have co-species
+        const validation = validateBoard(newBoard, allCoSpecies)
+        setValidationResult(validation)
+      } else {
+        const maxAttempts = selectedBiomes.length > 0 && selectedBiomes.length < 6 ? 20000 : 2000
+        alert(`Could not generate a compatible board after ${maxAttempts} attempts. Try selecting exactly 4 biomes, more biomes, or fewer required animals.`)
+      }
+      setIsGenerating(false)
+    }, 100)
+  }
+
   const handleExport = () => {
     if (!board) return
     const exportData = {
@@ -237,6 +262,7 @@ Co-Species: ${exportData.coSpecies}
           style={{ 
             fontSize: '1.2rem', 
             padding: '15px 40px', 
+            marginRight: '10px',
             background: (selectedBiomes.length > 0 && selectedBiomes.length !== 4) ? '#ccc' : '#28a745',
             cursor: (selectedBiomes.length > 0 && selectedBiomes.length !== 4) ? 'not-allowed' : 'pointer'
           }}
@@ -244,6 +270,21 @@ Co-Species: ${exportData.coSpecies}
           {isGenerating ? 'Generating...' : 
            (selectedBiomes.length > 0 && selectedBiomes.length !== 4) ? `Please select exactly 4 biomes (${selectedBiomes.length}/4)` : 
            '⚖️ Generate Balanced Board'}
+        </button>
+        <button 
+          className="primary" 
+          onClick={handleGenerateBaseGameCompatible}
+          disabled={isGenerating || (selectedBiomes.length > 0 && selectedBiomes.length !== 4)}
+          style={{ 
+            fontSize: '1.2rem', 
+            padding: '15px 40px', 
+            background: (selectedBiomes.length > 0 && selectedBiomes.length !== 4) ? '#ccc' : '#17a2b8',
+            cursor: (selectedBiomes.length > 0 && selectedBiomes.length !== 4) ? 'not-allowed' : 'pointer'
+          }}
+        >
+          {isGenerating ? 'Generating...' : 
+           (selectedBiomes.length > 0 && selectedBiomes.length !== 4) ? `Please select exactly 4 biomes (${selectedBiomes.length}/4)` : 
+           '🎲 Generate Board compatible with Base Game Sheet'}
         </button>
       </div>
 

@@ -2,6 +2,8 @@ import type { Animal } from '../animals'
 import type { CoSpecies } from '../co-species'
 import { SelectedBoard, validateBoard } from './validation'
 import type { Category, Biome } from '../constants'
+import { sampleBoards } from '../sampleBoards'
+import animalsData from '../animals'
 
 type GenerationOptions = {
   preferredBiomes?: Biome[]
@@ -10,6 +12,7 @@ type GenerationOptions = {
   strict?: boolean  // If true, ensures no warnings (balanced board)
   requiredAnimals?: string[]  // IDs of animals that must be included
   selectedBiomes?: Biome[]  // Focus on these biomes only
+  compatibleWithBaseGame?: boolean  // Only use animals with Base Game compatible group sizes
 }
 
 // Simple random number generator from seed
@@ -28,6 +31,42 @@ function shuffle<T>(array: T[], random: () => number): T[] {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
   }
   return shuffled
+}
+
+// Get valid group sizes from Base Game animals
+function getBaseGameGroupSizes(): Set<string | number> {
+  const baseGameBoard = sampleBoards.find(b => b.name === 'Base Game')
+  if (!baseGameBoard) return new Set()
+  
+  const allAnimals = animalsData.animals
+  const groupSizes = new Set<string | number>()
+  
+  // Get all animals from Base Game
+  const baseGameAnimalIds = [
+    ...baseGameBoard.board.level1,
+    ...baseGameBoard.board.level2,
+    ...baseGameBoard.board.level3
+  ]
+  
+  baseGameAnimalIds.forEach(animalIdOrAnimal => {
+    // Handle both string IDs and Animal objects (due to 'as any' in sampleBoards)
+    const animalId = typeof animalIdOrAnimal === 'string' ? animalIdOrAnimal : animalIdOrAnimal.id
+    const animal = allAnimals.find(a => a.id === animalId)
+    if (animal) {
+      // Add group sizes for all levels
+      if (animal.groupSize.level1 !== null && animal.groupSize.level1 !== undefined) {
+        groupSizes.add(animal.groupSize.level1)
+      }
+      if (animal.groupSize.level2 !== null && animal.groupSize.level2 !== undefined) {
+        groupSizes.add(animal.groupSize.level2)
+      }
+      if (animal.groupSize.level3 !== null && animal.groupSize.level3 !== undefined) {
+        groupSizes.add(animal.groupSize.level3)
+      }
+    }
+  })
+  
+  return groupSizes
 }
 
 function meetsRequirement(animal: Animal, selectedAnimals: Animal[]): boolean {
@@ -99,6 +138,20 @@ export function generateBoard(
       filteredAnimals = allAnimals.filter(animal => {
         const animalBiomes = Array.isArray(animal.biome) ? animal.biome : [animal.biome]
         return animalBiomes.some(biome => options.selectedBiomes!.includes(biome))
+      })
+    }
+    
+    // Filter by Base Game compatible group sizes if specified
+    if (options.compatibleWithBaseGame) {
+      const validGroupSizes = getBaseGameGroupSizes()
+      filteredAnimals = filteredAnimals.filter(animal => {
+        // An animal is compatible if at least one of its group sizes matches Base Game
+        const groupSize1 = animal.groupSize.level1
+        const groupSize2 = animal.groupSize.level2
+        const groupSize3 = animal.groupSize.level3
+        return (groupSize1 !== null && validGroupSizes.has(groupSize1)) ||
+               (groupSize2 !== null && validGroupSizes.has(groupSize2)) ||
+               (groupSize3 !== null && validGroupSizes.has(groupSize3))
       })
     }
     
