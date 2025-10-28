@@ -80,7 +80,7 @@ const isRequirementSatisfied = (
   }
 }
 
-export function validateBoard(board: SelectedBoard): ValidationResult {
+export function validateBoard(board: SelectedBoard, availableCoSpecies?: CoSpecies[]): ValidationResult {
   const result: ValidationResult = {
     valid: true,
     errors: [],
@@ -136,7 +136,7 @@ export function validateBoard(board: SelectedBoard): ValidationResult {
   // Removed: Level I biome distribution validation
   // This rule is too strict and causes false warnings with the current random biome assignment system
 
-  // Check that each biome with animals has at least 1 co-species
+  // Check that each biome with animals has at least 1 co-species (if co-species exist for that biome)
   const biomesWithAnimals = new Set<string>()
   const allAnimalsList = [...board.level1, ...board.level2, ...board.level3]
   allAnimalsList.forEach((animal: Animal) => {
@@ -149,11 +149,30 @@ export function validateBoard(board: SelectedBoard): ValidationResult {
     const biomes = isBiomeArray(species.biome) ? species.biome : [species.biome]
     biomes.forEach((biome: string) => biomesWithCoSpecies.add(biome))
   })
+  
+  // Get biomes that have co-species available (if availableCoSpecies was provided)
+  const biomesWithCoSpeciesAvailable = new Set<string>()
+  if (availableCoSpecies) {
+    availableCoSpecies.forEach((species: CoSpecies) => {
+      const biomes = isBiomeArray(species.biome) ? species.biome : [species.biome]
+      biomes.forEach((biome: string) => biomesWithCoSpeciesAvailable.add(biome))
+    })
+  }
 
   biomesWithAnimals.forEach((biome: string) => {
     if (!biomesWithCoSpecies.has(biome)) {
-      result.valid = false
-      result.errors.push(`${biome} has animals but no co-species (needs at least 1 co-species per biome)`)
+      // Only require co-species if they're available for this biome
+      // If availableCoSpecies is provided, only require if that biome has co-species available
+      if (availableCoSpecies) {
+        if (biomesWithCoSpeciesAvailable.has(biome)) {
+          result.valid = false
+          result.errors.push(`${biome} has animals but no co-species (needs at least 1 co-species per biome)`)
+        }
+      } else {
+        // If we don't know which biomes have co-species, always require (to be safe)
+        result.valid = false
+        result.errors.push(`${biome} has animals but no co-species (needs at least 1 co-species per biome)`)
+      }
     }
   })
 

@@ -5,6 +5,8 @@ import type { Animal } from './animals'
 import type { CoSpecies } from './co-species'
 import { type SelectedBoard, validateBoard } from './utils/validation'
 import { generateBoard } from './utils/boardGenerator'
+import { biomes } from './constants'
+import type { Biome } from './constants'
 
 // Biome colors
 const biomeColors: Record<string, string> = {
@@ -57,6 +59,7 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [requiredAnimalIds, setRequiredAnimalIds] = useState<string[]>([])
   const [isFilterExpanded, setIsFilterExpanded] = useState(false)
+  const [selectedBiomes, setSelectedBiomes] = useState<Biome[]>([])
 
   const handleGenerateBalancedBoard = () => {
     setIsGenerating(true)
@@ -66,14 +69,17 @@ export default function App() {
       const newBoard = generateBoard(allAnimals, allCoSpecies, {
         seed: Date.now(),
         strict: true,
-        requiredAnimals: requiredAnimalIds
+        requiredAnimals: requiredAnimalIds,
+        selectedBiomes: selectedBiomes.length > 0 ? selectedBiomes : undefined
       })
       if (newBoard) {
         setBoard(newBoard)
-        const validation = validateBoard(newBoard)
+        // Pass available co-species to validation so it knows which biomes have co-species
+        const validation = validateBoard(newBoard, allCoSpecies)
         setValidationResult(validation)
       } else {
-        alert('Could not generate a balanced board after 2000 attempts. Try again or the board may be too restrictive.')
+        const maxAttempts = selectedBiomes.length > 0 && selectedBiomes.length < 6 ? 20000 : 2000
+        alert(`Could not generate a balanced board after ${maxAttempts} attempts. Try selecting exactly 4 biomes, more biomes, or fewer required animals.`)
       }
       setIsGenerating(false)
     }, 100)
@@ -114,6 +120,63 @@ Co-Species: ${exportData.coSpecies}
       </header>
 
       <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '15px' }}>Select Biomes</h3>
+        <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '15px' }}>
+          Choose 4 biomes to focus on, or leave empty to use all biomes.
+        </p>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+          {Object.values(biomes).map(biome => (
+            <label
+              key={biome}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                padding: '10px 15px',
+                border: `2px solid ${biomeColors[biome]}`,
+                borderRadius: '8px',
+                cursor: 'pointer',
+                backgroundColor: selectedBiomes.includes(biome as Biome) ? biomeColors[biome] : 'transparent',
+                color: selectedBiomes.includes(biome as Biome) ? '#fff' : '#333',
+                opacity: selectedBiomes.length >= 4 && !selectedBiomes.includes(biome as Biome) ? 0.3 : 1
+              }}
+            >
+              <input
+                type="checkbox"
+                checked={selectedBiomes.includes(biome as Biome)}
+                onChange={() => {
+                  if (selectedBiomes.includes(biome as Biome)) {
+                    setSelectedBiomes(selectedBiomes.filter(b => b !== biome))
+                  } else if (selectedBiomes.length < 4) {
+                    setSelectedBiomes([...selectedBiomes, biome as Biome])
+                  }
+                }}
+                disabled={selectedBiomes.length >= 4 && !selectedBiomes.includes(biome as Biome)}
+                style={{ marginRight: '8px' }}
+              />
+              {biome}
+            </label>
+          ))}
+        </div>
+        {selectedBiomes.length > 0 && (
+          <div style={{ marginTop: '15px' }}>
+            <button 
+              onClick={() => setSelectedBiomes([])}
+              style={{ 
+                background: '#dc3545', 
+                color: 'white',
+                border: 'none',
+                padding: '8px 15px',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Clear Selection
+            </button>
+          </div>
+        )}
+      </div>
+
+      <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px渡航4px rgba(0,0,0,0.1)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <button 
@@ -170,10 +233,17 @@ Co-Species: ${exportData.coSpecies}
         <button 
           className="primary" 
           onClick={handleGenerateBalancedBoard}
-          disabled={isGenerating}
-          style={{ fontSize: '1.2rem', padding: '15px 40px', background: '#28a745' }}
+          disabled={isGenerating || (selectedBiomes.length > 0 && selectedBiomes.length !== 4)}
+          style={{ 
+            fontSize: '1.2rem', 
+            padding: '15px 40px', 
+            background: (selectedBiomes.length > 0 && selectedBiomes.length !== 4) ? '#ccc' : '#28a745',
+            cursor: (selectedBiomes.length > 0 && selectedBiomes.length !== 4) ? 'not-allowed' : 'pointer'
+          }}
         >
-          {isGenerating ? 'Generating...' : '⚖️ Generate Balanced Board'}
+          {isGenerating ? 'Generating...' : 
+           (selectedBiomes.length > 0 && selectedBiomes.length !== 4) ? `Please select exactly 4 biomes (${selectedBiomes.length}/4)` : 
+           '⚖️ Generate Balanced Board'}
         </button>
       </div>
 
@@ -301,8 +371,22 @@ function CoSpeciesSection({ coSpecies, biomeAssignments }: {
           <p style={{ color: '#95a5a6', textAlign: 'center' }}>No co-species generated</p>
         ) : (
           <>
-            {groupAnimalsByBiome(coSpecies, biomeAssignments).map(([biome, biomeSpecies]) => (
-              <div key={biome} style={{ marginBottom: '20px' }}>
+{(() => {
+  const bySize = new Map<number, Map<string, CoSpecies[]>>()
+  coSpecies.forEach(s => {
+    const biomes = Array.isArray(s.biome) ? s.biome : [s.biome]
+    const assignedBiome = biomeAssignments?.get(s.id) || biomes[0]
+    if (!bySize.has(s.size)) bySize.set(s.size, new Map())
+    const biomeMap = bySize.get(s.size)!
+    if (!biomeMap.has(assignedBiome)) biomeMap.set(assignedBiome, [])
+    biomeMap.get(assignedBiome)!.push(s)
+  })
+  return Array.from(bySize.entries()).sort((a, b) => a[0] - b[0]).flatMap(([size, biomeMap]) => [
+    <h3 key={`header-${size}`} style={{ fontSize: '1.1rem', color: '#2c3e50', margin: '15px 0', marginBottom: '15px' }}>
+      {size} Tile{size > 1 ? 's' : ''} ({Array.from(biomeMap.values()).flat().length})
+    </h3>,
+    ...Array.from(biomeMap.entries()).map(([biome, biomeSpecies], idx) => ((
+              <div key={`${size}-${biome}-${idx}`} style={{ marginBottom: '20px' }}>
                 <BiomeChip biome={biome} />
                 <div style={{ 
                   display: 'grid', 
@@ -315,14 +399,16 @@ function CoSpeciesSection({ coSpecies, biomeAssignments }: {
                       <div>
                         <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{species.name}</div>
                         <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>
-                          {species.size} tile{species.size > 1 ? 's' : ''}
+                          {Array.isArray(species.category) ? species.category.join(', ') : species.category}
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-            ))}
+            )))
+  ])
+})().map((el, idx) => el)}
           </>
         )}
       </div>

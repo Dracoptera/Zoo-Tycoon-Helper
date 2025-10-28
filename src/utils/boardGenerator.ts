@@ -9,6 +9,7 @@ type GenerationOptions = {
   seed?: number
   strict?: boolean  // If true, ensures no warnings (balanced board)
   requiredAnimals?: string[]  // IDs of animals that must be included
+  selectedBiomes?: Biome[]  // Focus on these biomes only
 }
 
 // Simple random number generator from seed
@@ -62,7 +63,9 @@ export function generateBoard(
 ): SelectedBoard | null {
   const { seed, strict = false } = options
   const random = seed !== undefined ? seededRandom(seed) : Math.random
-  const maxAttempts = strict ? 2000 : 300  // More attempts with relaxed constraints
+  // Increase attempts when biomes are restricted (fewer than all 6 biomes)
+  const biomeRestricted = options.selectedBiomes && options.selectedBiomes.length > 0 && options.selectedBiomes.length < 6
+  const maxAttempts = strict ? (biomeRestricted ? 20000 : 2000) : 300
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const board: SelectedBoard = {
@@ -90,10 +93,27 @@ export function generateBoard(
       }
     }
 
+    // Filter by selected biomes if specified
+    let filteredAnimals = allAnimals
+    if (options.selectedBiomes && options.selectedBiomes.length > 0) {
+      filteredAnimals = allAnimals.filter(animal => {
+        const animalBiomes = Array.isArray(animal.biome) ? animal.biome : [animal.biome]
+        return animalBiomes.some(biome => options.selectedBiomes!.includes(biome))
+      })
+    }
+    
+    let filteredCoSpecies = allCoSpecies
+    if (options.selectedBiomes && options.selectedBiomes.length > 0) {
+      filteredCoSpecies = allCoSpecies.filter(species => {
+        const speciesBiomes = Array.isArray(species.biome) ? species.biome : [species.biome]
+        return speciesBiomes.some(biome => options.selectedBiomes!.includes(biome))
+      })
+    }
+
     // Don't pre-select biomes - let them naturally emerge from selection
-    let availableLevel1 = allAnimals.filter(a => a.level === 1)
-    let availableLevel2 = allAnimals.filter(a => a.level === 2)
-    let availableLevel3 = allAnimals.filter(a => a.level === 3)
+    let availableLevel1 = filteredAnimals.filter(a => a.level === 1)
+    let availableLevel2 = filteredAnimals.filter(a => a.level === 2)
+    let availableLevel3 = filteredAnimals.filter(a => a.level === 3)
 
     // Remove already-selected required animals from available pool
     if (options.requiredAnimals && options.requiredAnimals.length > 0) {
@@ -150,7 +170,7 @@ export function generateBoard(
     })
 
     // Add co-species: at least 1 per biome that has animals (can be small or large)
-    const shuffledCoSpecies = shuffle(allCoSpecies, random)
+    const shuffledCoSpecies = shuffle(filteredCoSpecies, random)
     const coSpeciesByBiome = new Map<string, number>()
     
     // First pass: add at least 1 co-species to each biome that has animals
@@ -212,8 +232,25 @@ export function generateBoard(
     const biomeCounts = new Map<string, number>()
     const level1ByBiome = new Map<string, number>()
     
+    // Get valid biomes for assignment (only selected ones, if any)
+    const validBiomes = options.selectedBiomes && options.selectedBiomes.length > 0 
+      ? options.selectedBiomes 
+      : null
+    
     selectedAnimals.forEach(animal => {
-      const biomes = Array.isArray(animal.biome) ? animal.biome : [animal.biome]
+      let biomes = Array.isArray(animal.biome) ? animal.biome : [animal.biome]
+      
+      // Filter to only selected biomes if restrictions apply
+      if (validBiomes) {
+        biomes = biomes.filter(b => validBiomes.includes(b))
+      }
+      
+      if (biomes.length === 0) {
+        // This shouldn't happen if filtering worked correctly
+        console.warn(`Animal ${animal.id} has no valid biomes`)
+        return
+      }
+      
       let assignedBiome = biomes[0]
       
       // Simple assignment: prefer biomes that need more animals
@@ -232,6 +269,25 @@ export function generateBoard(
       }
     })
     
+    // Also assign biomes to co-species
+    board.coSpecies.forEach(coSpecies => {
+      let biomes = Array.isArray(coSpecies.biome) ? coSpecies.biome : [coSpecies.biome]
+      
+      // Filter to only selected biomes if restrictions apply
+      if (validBiomes) {
+        biomes = biomes.filter(b => validBiomes.includes(b))
+      }
+      
+      if (biomes.length === 0) {
+        console.warn(`Co-species ${coSpecies.id} has no valid biomes`)
+        return
+      }
+      
+      // Assign to first valid biome (co-species distribution is less critical)
+      const assignedBiome = biomes[0]
+      biomeAssignments.set(coSpecies.id, assignedBiome)
+    })
+    
     // Check if any viable biome (3+ species) is missing Level I
     let hasViableWithoutLevel1 = false
     biomeCounts.forEach((count, biome) => {
@@ -248,15 +304,17 @@ export function generateBoard(
     // Store biome assignments in board
     board.biomeAssignments = biomeAssignments
 
-    // Validate the board
-    const validation = validateBoard(board)
+    // Validate the board - pass available co-species when biomes are restricted
+    const validation = validateBoard(board, biomeRestricted ? filteredCoSpecies : undefined)
     if (validation.valid) {
       // Separate critical and non-critical warnings
-      const criticalWarnings = validation.warnings.filter(w => 
-        w.includes('needs at least 3 to be viable') ||  // Biome viability
-        w.includes('no co-species') ||  // Missing co-species
-        w.includes('locked behind popularity')  // Popularity locks
-      )
+      // When biomes are restricted, "viability" warnings are expected - ignore them
+      const criticalWarnings = validation.warnings.filter(w => {
+        if (biomeRestricted && w.includes('needs at least 3 to be viable')) {
+          return false // Not critical when biomes are restricted
+        }
+        return w.includes('no co-species') || w.includes('locked behind popularity')
+      })
       
       // Accept board if no critical warnings, or after 1000 attempts even with some critical warnings
       if (criticalWarnings.length === 0 || (attempt > 1000 && criticalWarnings.length <= 2)) {
