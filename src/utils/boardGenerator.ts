@@ -9,6 +9,7 @@ type GenerationOptions = {
   excludeBiomes?: Biome[]
   seed?: number
   strict?: boolean  // If true, ensures no warnings (balanced board)
+  requiredAnimals?: string[]  // IDs of animals that must be included
 }
 
 // Simple random number generator from seed
@@ -114,12 +115,35 @@ export function generateBoard(
       coSpecies: []
     }
 
+    // Add required animals if specified
+    if (options.requiredAnimals && options.requiredAnimals.length > 0) {
+      for (const animalId of options.requiredAnimals) {
+        const animal = allAnimals.find(a => a.id === animalId)
+        if (animal) {
+          if (animal.level === 1 && board.level1.length < 9) board.level1.push(animal)
+          else if (animal.level === 2 && board.level2.length < 10) board.level2.push(animal)
+          else if (animal.level === 3 && board.level3.length < 5) board.level3.push(animal)
+        }
+      }
+      
+      // If required animals don't fit, skip this attempt
+      if (options.requiredAnimals.length > 0 && 
+          (board.level1.length > 9 || board.level2.length > 10 || board.level3.length > 5)) {
+        continue
+      }
+    }
+
     // Don't pre-select biomes - let them naturally emerge from selection
     let availableLevel1 = allAnimals.filter(a => a.level === 1)
     let availableLevel2 = allAnimals.filter(a => a.level === 2)
     let availableLevel3 = allAnimals.filter(a => a.level === 3)
 
-    // Old biome filtering is now replaced by selectedBiomes filtering above
+    // Remove already-selected required animals from available pool
+    if (options.requiredAnimals && options.requiredAnimals.length > 0) {
+      availableLevel1 = availableLevel1.filter(a => !options.requiredAnimals!.includes(a.id))
+      availableLevel2 = availableLevel2.filter(a => !options.requiredAnimals!.includes(a.id))
+      availableLevel3 = availableLevel3.filter(a => !options.requiredAnimals!.includes(a.id))
+    }
 
     // Shuffle available animals
     availableLevel1 = shuffle(availableLevel1, random)
@@ -135,16 +159,16 @@ export function generateBoard(
 
     if (board.level1.length < 9) continue // Try again
 
-    // Try to fill Level 2 (9 animals) - only check requirements
+    // Try to fill Level 2 (10 animals) - only check requirements
     const selectedForRequirements = [...board.level1]
     for (const animal of availableLevel2) {
-      if (board.level2.length >= 9) break
+      if (board.level2.length >= 10) break
       if (!meetsRequirement(animal, selectedForRequirements)) continue
       board.level2.push(animal)
       selectedForRequirements.push(animal)
     }
 
-    if (board.level2.length < 9) continue // Try again
+    if (board.level2.length < 10) continue // Try again
 
     // Try to fill Level 3 (5 animals) - only check requirements
     for (const animal of availableLevel3) {

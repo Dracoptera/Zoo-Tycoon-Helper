@@ -55,6 +55,7 @@ export default function App() {
   const [board, setBoard] = useState<SelectedBoard | null>(null)
   const [validationResult, setValidationResult] = useState<ReturnType<typeof validateBoard> | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
+  const [requiredAnimalIds, setRequiredAnimalIds] = useState<string[]>([])
 
   const handleGenerateBalancedBoard = () => {
     setIsGenerating(true)
@@ -63,7 +64,8 @@ export default function App() {
       const allCoSpecies = coSpeciesData.coSpecies as CoSpecies[]
       const newBoard = generateBoard(allAnimals, allCoSpecies, {
         seed: Date.now(),
-        strict: true
+        strict: true,
+        requiredAnimals: requiredAnimalIds
       })
       if (newBoard) {
         setBoard(newBoard)
@@ -110,6 +112,18 @@ Co-Species: ${exportData.coSpecies}
         <p className="subtitle">Automatically generates balanced, valid animal selection boards for your game</p>
       </header>
 
+      <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '15px' }}>Required Animals</h3>
+        <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '15px' }}>
+          Select animals that must be included in the board:
+        </p>
+        <RequiredAnimalsSelector 
+          allAnimals={animalsData.animals as Animal[]}
+          selectedIds={requiredAnimalIds}
+          onSelectionChange={setRequiredAnimalIds}
+        />
+      </div>
+
       <div style={{ textAlign: 'center', marginBottom: '30px' }}>
         <button 
           className="primary" 
@@ -124,7 +138,7 @@ Co-Species: ${exportData.coSpecies}
       {validationResult && (
         <div style={{
           background: validationResult.valid ? '#d4edda' : '#f8d7da',
-          border: `2px solid ${validationResult.valid ? '#28a745' : '#dc3545'}`,
+          border: ` Eusolid ${validationResult.valid ? '#28a745' : '#dc3545'}`,
           borderRadius: '8px',
           padding: '20px',
           marginBottom: '20px'
@@ -159,7 +173,7 @@ Co-Species: ${exportData.coSpecies}
         <>
           <div className="board">
             <LevelSection level={1} animals={board.level1} max={9} biomeAssignments={board.biomeAssignments} />
-            <LevelSection level={2} animals={board.level2} max={9} biomeAssignments={board.biomeAssignments} />
+            <LevelSection level={2} animals={board.level2} max={10} biomeAssignments={board.biomeAssignments} />
             <LevelSection level={3} animals={board.level3} max={5} biomeAssignments={board.biomeAssignments} />
             {board.coSpecies.length > 0 && (
               <CoSpeciesSection coSpecies={board.coSpecies} biomeAssignments={board.biomeAssignments} />
@@ -270,6 +284,77 @@ function CoSpeciesSection({ coSpecies, biomeAssignments }: {
           </>
         )}
       </div>
+    </div>
+  )
+}
+
+function RequiredAnimalsSelector({ allAnimals, selectedIds, onSelectionChange }: {
+  allAnimals: Animal[]
+  selectedIds: string[]
+  onSelectionChange: (ids: string[]) => void
+}) {
+  const [searchTerm, setSearchTerm] = useState('')
+  
+  const filteredAnimals = allAnimals.filter(animal => 
+    animal.name.toLowerCase().includes(searchTerm.toLowerCase())
+  )
+  
+  const toggleAnimal = (animalId: string) => {
+    if (selectedIds.includes(animalId)) {
+      onSelectionChange(selectedIds.filter(id => id !== animalId))
+    } else {
+      onSelectionChange([...selectedIds, animalId])
+    }
+  }
+  
+  return (
+    <div>
+      <input
+        type="text"
+        placeholder="Search animals..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        style={{
+          width: '100%',
+          padding: '10px',
+          marginBottom: '15px',
+          border: '1px solid #ddd',
+          borderRadius: '4px',
+          fontSize: '1rem'
+        }}
+      />
+      <div style={{ 
+        maxHeight: '200px', 
+        overflowY: 'auto', 
+        border: '1px solid #ddd',
+        borderRadius: '4px',
+        padding: '5px'
+      }}>
+        {filteredAnimals.map(animal => (
+          <label
+            key={animal.id}
+            style={{
+              display: 'block',
+              padding: '8px',
+              cursor: 'pointer',
+              backgroundColor: selectedIds.includes(animal.id) ? '#e3f2fd' : 'transparent'
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={selectedIds.includes(animal.id)}
+              onChange={() => toggleAnimal(animal.id)}
+              style={{ marginRight: '10px' }}
+            />
+            {animal.name} <span style={{ color: '#999', fontSize: '0.85rem' }}>(Level {animal.level})</span>
+          </label>
+        ))}
+      </div>
+      {selectedIds.length > 0 && (
+        <div style={{ marginTop: '10px' }}>
+          <strong>Selected:</strong> {selectedIds.length} animal{selectedIds.length > 1 ? 's' : ''}
+        </div>
+      )}
     </div>
   )
 }

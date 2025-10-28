@@ -92,9 +92,9 @@ export function validateBoard(board: SelectedBoard): ValidationResult {
     result.valid = false
     result.errors.push(`Level 1 must have exactly 9 animals (currently ${board.level1.length})`)
   }
-  if (board.level2.length !== 9) {
+  if (board.level2.length !== 10) {
     result.valid = false
-    result.errors.push(`Level 2 must have exactly 9 animals (currently ${board.level2.length})`)
+    result.errors.push(`Level 2 must have exactly 10 animals (currently ${board.level2.length})`)
   }
   if (board.level3.length !== 5) {
     result.valid = false
