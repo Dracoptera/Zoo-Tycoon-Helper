@@ -1777,5 +1777,149 @@ export default {
         "category": categories.UNGULATE
       }
     },
+    {
+      "id": "bornean-orangutan",
+      "name": "Bornean Orangutan",
+      "category": categories.PRIMATE,
+      "biome": biomes.RAINFOREST,
+      "level": 3,
+      "basePopularityValue": 3,
+      "educationValue": 3,
+      "conservationValue": 4,
+      "costPerTile": 2,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 3,
+        "level3": 6
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": null,
+        "level3": 2
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 2,
+        "level3": 5
+      },
+      "requirement": {
+        "count": 2,
+        "category": categories.PRIMATE
+      }
+    },
+    {
+      "id": "przewalskis-horse",
+      "name": "Przewalski's Horse",
+      "category": categories.UNGULATE,
+      "biome": biomes.TUNDRA_STEPPE,
+      "level": 3,
+      "basePopularityValue": 2,
+      "educationValue": 2,
+      "conservationValue": 4,
+      "costPerTile": 2,
+      "maxPerTile": 2,
+      "experience": {
+        "level1": 1,
+        "level2": 3,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": 3,
+        "level2": 4,
+        "level3": 6
+      },
+      "requirement": {
+        "count": 2,
+        "category": categories.UNGULATE
+      }
+    },
+    {
+      "id": "golden-lion-tamarin",
+      "name": "Golden Lion Tamarin",
+      "category": categories.PRIMATE,
+      "biome": biomes.RAINFOREST,
+      "level": 3,
+      "basePopularityValue": 1,
+      "educationValue": 2,
+      "conservationValue": 3,
+      "costPerTile": 1,
+      "maxPerTile": 3,
+      "experience": {
+        "level1": 1,
+        "level2": 3,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 0,
+        "level3": 2
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": 2,
+        "level2": 3,
+        "level3": 8
+      },
+      "requirement": {
+        "count": 2,
+        "category": categories.PRIMATE
+      }
+    },
+    {
+      "id": "northern-bald-ibis",
+      "name": "Northern Bald Ibis",
+      "category": categories.BIRD,
+      "biome": biomes.SAVANNAH,
+      "level": 3,
+      "basePopularityValue": 1,
+      "educationValue": 1,
+      "conservationValue": 4,
+      "costPerTile": 1,
+      "maxPerTile": 4,
+      "experience": {
+        "level1": 1,
+        "level2": 3,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": 1,
+        "level2": null,
+        "level3": 2
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": 4,
+        "level2": 5,
+        "level3": 9
+      },
+      "requirement": {
+        "count": 2,
+        "category": categories.BIRD
+      }
+    },
   ]
 };
