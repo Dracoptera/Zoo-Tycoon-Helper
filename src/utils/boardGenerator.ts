@@ -127,9 +127,37 @@ export function generateBoard(
     availableLevel2 = shuffle(availableLevel2, random)
     availableLevel3 = shuffle(availableLevel3, random)
 
-    // Try to fill Level 1 (9 animals) - only check requirements
+    // When biomes are restricted, ensure at least one Level 1 from each selected biome
+    if (options.selectedBiomes && options.selectedBiomes.length > 0) {
+      const level1Biomes = new Set<string>()
+      
+      // First, try to ensure we have at least one from each selected biome
+      for (const biome of options.selectedBiomes) {
+        if (level1Biomes.has(biome)) continue
+        
+        for (const animal of availableLevel1) {
+          if (board.level1.some(a => a.id === animal.id)) continue
+          if (!meetsRequirement(animal, board.level1)) continue
+          
+          const biomes = Array.isArray(animal.biome) ? animal.biome : [animal.biome]
+          if (biomes.includes(biome)) {
+            board.level1.push(animal)
+            level1Biomes.add(biome)
+            break
+          }
+        }
+      }
+      
+      // If we didn't get at least one from each biome, this attempt won't work
+      if (level1Biomes.size < options.selectedBiomes.length) {
+        continue // Try again
+      }
+    }
+    
+    // Now fill the rest randomly
     for (const animal of availableLevel1) {
       if (board.level1.length >= 9) break
+      if (board.level1.some(a => a.id === animal.id)) continue
       if (!meetsRequirement(animal, board.level1)) continue
       board.level1.push(animal)
     }
@@ -156,6 +184,26 @@ export function generateBoard(
     }
 
     if (board.level3.length < 5) continue // Try again
+
+    // Check that each restricted biome has at least 1 Level 1 species
+    if (options.selectedBiomes && options.selectedBiomes.length > 0) {
+      const level1Biomes = new Set<string>()
+      board.level1.forEach(animal => {
+        const biomes = Array.isArray(animal.biome) ? animal.biome : [animal.biome]
+        biomes.forEach(biome => {
+          if (options.selectedBiomes!.includes(biome)) {
+            level1Biomes.add(biome)
+          }
+        })
+      })
+      
+      // Check if all selected biomes have at least 1 Level 1 species
+      const missingBiomes = options.selectedBiomes.filter(biome => !level1Biomes.has(biome))
+      if (missingBiomes.length > 0) {
+        // Not all selected biomes have a Level 1 species, try again
+        continue
+      }
+    }
 
     // Add co-species to help meet biome requirements
     const allSelectedAnimals = [...board.level1, ...board.level2, ...board.level3]
