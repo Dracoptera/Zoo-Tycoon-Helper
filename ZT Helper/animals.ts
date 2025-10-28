@@ -1455,7 +1455,7 @@ export default {
       "experience": {
         "level1": 1,
         "level2": 4,
-        "level3": 6s
+        "level3": 6
       },
       "freeSpace": {
         "level1": 1,
