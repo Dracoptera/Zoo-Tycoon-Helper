@@ -56,6 +56,7 @@ export default function App() {
   const [validationResult, setValidationResult] = useState<ReturnType<typeof validateBoard> | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
   const [requiredAnimalIds, setRequiredAnimalIds] = useState<string[]>([])
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false)
 
   const handleGenerateBalancedBoard = () => {
     setIsGenerating(true)
@@ -113,15 +114,56 @@ Co-Species: ${exportData.coSpecies}
       </header>
 
       <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '15px' }}>Required Animals</h3>
-        <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '15px' }}>
-          Select animals that must be included in the board:
-        </p>
-        <RequiredAnimalsSelector 
-          allAnimals={animalsData.animals as Animal[]}
-          selectedIds={requiredAnimalIds}
-          onSelectionChange={setRequiredAnimalIds}
-        />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <button 
+              onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+              style={{ 
+                background: 'none', 
+                border: 'none', 
+                fontSize: '1.2rem', 
+                cursor: 'pointer',
+                padding: '5px'
+              }}
+            >
+              {isFilterExpanded ? '▼' : '▶'}
+            </button>
+            <h3 style={{ margin: 0 }}>Required Animals</h3>
+            {requiredAnimalIds.length > 0 && (
+              <span style={{ background: '#2196f3', color: 'white', padding: '4px 8px', borderRadius: '12px', fontSize: '0.85rem' }}>
+                {requiredAnimalIds.length}
+              </span>
+            )}
+          </div>
+          {requiredAnimalIds.length > 0 && (
+            <button 
+              onClick={() => setRequiredAnimalIds([])}
+              style={{ 
+                background: '#dc3545', 
+                color: 'white',
+                border: 'none',
+                padding: '8px 15px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '0.9rem'
+              }}
+            >
+              Clear Selected
+            </button>
+          )}
+        </div>
+        {isFilterExpanded && (
+          <>
+            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '15px' }}>
+              Select animals that must be included in the board:
+            </p>
+            <RequiredAnimalsSelector 
+              allAnimals={animalsData.animals as Animal[]}
+              selectedIds={requiredAnimalIds}
+              onSelectionChange={setRequiredAnimalIds}
+            />
+          </>
+        )}
       </div>
 
       <div style={{ textAlign: 'center', marginBottom: '30px' }}>
