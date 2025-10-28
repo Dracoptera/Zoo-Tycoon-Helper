@@ -31,7 +31,7 @@ export interface Animal {
     count: number;
     category: Category | Category[];
   };
-  unlockPopularity?: number;
+  isPopularityLocked?: boolean;
 }
 
 export default {
@@ -809,7 +809,7 @@ export default {
         "count": 5,
         "category": categories.CARNIVORE
       },
-      "unlockPopularity": 15
+      "isPopularityLocked": true
     },
     {
       "id": "black-rhinoceros",
@@ -1070,7 +1070,7 @@ export default {
         "count": 5,
         "category": categories.CARNIVORE
       },
-      "unlockPopularity": 15
+      "isPopularityLocked": true
     },
     {
       "id": "african-manatee",
@@ -1299,7 +1299,7 @@ export default {
         "count": 3,
         "category": categories.UNGULATE
       },
-      "unlockPopularity": 15
+      "isPopularityLocked": true
     },
     {
       "id": "spotted-eagle-ray",
