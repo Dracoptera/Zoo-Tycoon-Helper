@@ -112,7 +112,7 @@ export function validateBoard(board: SelectedBoard): ValidationResult {
   const coSpeciesByBiome = new Map<Biome, number>()
   board.coSpecies.forEach(species => {
     const biomes = isBiomeArray(species.biome) ? species.biome : [species.biome]
-    biomes.forEach(b => {
+    biomes.forEach((b: Biome) => {
       coSpeciesByBiome.set(b, (coSpeciesByBiome.get(b) || 0) + 1)
     })
   })
@@ -126,8 +126,8 @@ export function validateBoard(board: SelectedBoard): ValidationResult {
 
   // Check biome requirement (3 or more species per biome)
   Object.values(biomes).forEach(biome => {
-    const allAnimals = [...board.level1, ...board.level2, ...board.level3]
-    const count = countByBiome(allAnimals, board.coSpecies, biome, board.biomeAssignments)
+    const allAnimalsForBiome = [...board.level1, ...board.level2, ...board.level3]
+    const count = countByBiome(allAnimalsForBiome, board.coSpecies, biome, board.biomeAssignments)
     if (count > 0 && count < 3) {
       result.warnings.push(`${biome} has ${count} species (needs at least 3 to be viable)`)
     }
