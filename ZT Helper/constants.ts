@@ -8,7 +8,8 @@ export const categories = {
   REPTILE: "Reptile",
   INVERTEBRATE: "Invertebrate",
   AMPHIBIAN: "Amphibian",
-  AQUATIC: "Aquatic"
+  AQUATIC: "Aquatic",
+  FISH: "Fish"
 } as const;
 
 export const biomes = {
