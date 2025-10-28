@@ -1,15 +1,15 @@
 export const categories = {
-  CARNIVORE: "Carnivore",
-  UNGULATE: "Ungulate",
-  BIRD: "Bird",
-  XENARTHRAN: "Xenarthran",
-  MARSUPIAL: "Marsupial",
-  PRIMATE: "Primate",
-  REPTILE: "Reptile",
-  INVERTEBRATE: "Invertebrate",
-  AMPHIBIAN: "Amphibian",
-  AQUATIC: "Aquatic",
-  FISH: "Fish"
+  CARNIVORE: "Carnivore 🍖",
+  UNGULATE: "Ungulate 🦬",
+  BIRD: "Bird 🐦",
+  XENARTHRAN: "Xenarthran 🦥",
+  MARSUPIAL: "Marsupial 🦘",
+  PRIMATE: "Primate 🦍",
+  REPTILE: "Reptile 🐊",
+  INVERTEBRATE: "Invertebrate 🐛",
+  AMPHIBIAN: "Amphibian 🐸",
+  AQUATIC: "Aquatic 🦦",
+  FISH: "Fish 🐟"
 } as const;
 
 export const biomes = {

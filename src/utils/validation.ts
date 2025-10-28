@@ -1,6 +1,6 @@
 import type { Animal } from '../animals'
 import type { CoSpecies } from '../co-species'
-import { biomes, categories, Category, Biome } from '../constants'
+import { biomes, Category, Biome } from '../constants'
 
 export type SelectedBoard = {
   level1: Animal[]
@@ -180,36 +180,7 @@ export function validateBoard(board: SelectedBoard): ValidationResult {
     result.warnings.push(`${lockedAnimals.length} animal(s) are locked behind popularity requirement (15+ points)`)
   }
 
-  // Check that categories have 2-3 species and at least one is Co-Species or Level I
-  const allCategories: Category[] = Object.values(categories)
-  allCategories.forEach(category => {
-    const allWithCategory = [
-      ...board.level1.filter(a => {
-        const cats = isCategoryArray(a.category) ? a.category : [a.category]
-        return cats.includes(category as Category)
-      }),
-      ...board.level2.filter(a => {
-        const cats = isCategoryArray(a.category) ? a.category : [a.category]
-        return cats.includes(category as Category)
-      }),
-      ...board.level3.filter(a => {
-        const cats = isCategoryArray(a.category) ? a.category : [a.category]
-        return cats.includes(category as Category)
-      }),
-      ...board.coSpecies.filter(s => {
-        const cats = isCategoryArray(s.category) ? s.category : [s.category]
-        return cats.includes(category as Category)
-      })
-    ]
-    
-    // Allow up to 5 main species plus co-species (roughly 7-8 total is acceptable)
-    if (allWithCategory.length > 0 && allWithCategory.length > 8) {
-      result.warnings.push(`${category} has ${allWithCategory.length} species (recommended: 2-8)`)
-    }
-    
-    // Removed: Category should have at least one Co-Species or Level I
-    // This rule doesn't apply well since not all categories have co-species available
-  })
+  // Removed: Category count validation - no longer enforcing 2-8 species per category
 
   return result
 }
