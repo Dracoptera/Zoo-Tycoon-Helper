@@ -31,6 +31,7 @@ export interface Animal {
     count: number;
     category: Category;
   };
+  unlockPopularity?: number;
 }
 
 export default {
@@ -803,7 +804,12 @@ export default {
         "level1": null,
         "level2": 1,
         "level3": 2
-      }
+      },
+      "requirement": {
+        "count": 5,
+        "category": categories.CARNIVORE
+      },
+      "unlockPopularity": 15
     },
     {
       "id": "black-rhinoceros",
@@ -1030,6 +1036,43 @@ export default {
       }
     },
     {
+      "id": "giant-panda",
+      "name": "Giant Panda",
+      "category": categories.CARNIVORE,
+      "biome": biomes.MONTANE_FOREST,
+      "level": 2,
+      "basePopularityValue": 7,
+      "educationValue": 2,
+      "conservationValue": 2,
+      "costPerTile": 4,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 4,
+        "level3": 6
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": null,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": null,
+        "level3": 2
+      },
+      "requirement": {
+        "count": 5,
+        "category": categories.CARNIVORE
+      },
+      "unlockPopularity": 15
+    },
+    {
       "id": "african-manatee",
       "name": "Manatee",
       "category": categories.AQUATIC,
@@ -1251,7 +1294,12 @@ export default {
         "level1": 3,
         "level2": 4,
         "level3": "5+"
-      }
+      },
+      "requirement": {
+        "count": 3,
+        "category": categories.UNGULATE
+      },
+      "unlockPopularity": 15
     },
     {
       "id": "spotted-eagle-ray",
