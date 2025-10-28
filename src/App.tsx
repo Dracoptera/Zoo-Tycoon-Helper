@@ -18,13 +18,12 @@ const biomeColors: Record<string, string> = {
 
 // Helper function to group animals by biome
 // Animals with multiple biomes are randomly assigned to one biome to avoid duplication
-function groupAnimalsByBiome<T extends { biome: string | string[], id: string }>(items: T[]): [string, T[]][] {
+function groupAnimalsByBiome<T extends { biome: string | string[], id: string }>(items: T[], biomeAssignments?: Map<string, string>): [string, T[]][] {
   const grouped = new Map<string, T[]>()
   items.forEach(item => {
     const biomes = Array.isArray(item.biome) ? item.biome : [item.biome]
-    // Randomly select a biome for variety across different boards
-    const randomIndex = Math.floor(Math.random() * biomes.length)
-    const selectedBiome = biomes[randomIndex]
+    // Use the assigned biome from the board if available, otherwise use the first biome
+    const selectedBiome = biomeAssignments?.get(item.id) || biomes[0]
     if (!grouped.has(selectedBiome)) {
       grouped.set(selectedBiome, [])
     }
@@ -159,11 +158,11 @@ Co-Species: ${exportData.coSpecies}
       {board && (
         <>
           <div className="board">
-            <LevelSection level={1} animals={board.level1} max={9} />
-            <LevelSection level={2} animals={board.level2} max={9} />
-            <LevelSection level={3} animals={board.level3} max={5} />
+            <LevelSection level={1} animals={board.level1} max={9} biomeAssignments={board.biomeAssignments} />
+            <LevelSection level={2} animals={board.level2} max={9} biomeAssignments={board.biomeAssignments} />
+            <LevelSection level={3} animals={board.level3} max={5} biomeAssignments={board.biomeAssignments} />
             {board.coSpecies.length > 0 && (
-              <CoSpeciesSection coSpecies={board.coSpecies} />
+              <CoSpeciesSection coSpecies={board.coSpecies} biomeAssignments={board.biomeAssignments} />
             )}
           </div>
 
@@ -191,10 +190,11 @@ Co-Species: ${exportData.coSpecies}
   )
 }
 
-function LevelSection({ level, animals, max }: {
+function LevelSection({ level, animals, max, biomeAssignments }: {
   level: number
   animals: Animal[]
   max: number
+  biomeAssignments?: Map<string, string>
 }) {
   return (
     <div className="level-section">
@@ -204,7 +204,7 @@ function LevelSection({ level, animals, max }: {
           <p style={{ color: '#95a5a6', textAlign: 'center' }}>No animals generated</p>
         ) : (
           <>
-            {groupAnimalsByBiome(animals).map(([biome, biomeAnimals]) => (
+            {groupAnimalsByBiome(animals, biomeAssignments).map(([biome, biomeAnimals]) => (
               <div key={biome} style={{ marginBottom: '20px' }}>
                 <BiomeChip biome={biome} />
                 <div style={{ 
@@ -233,8 +233,9 @@ function LevelSection({ level, animals, max }: {
   )
 }
 
-function CoSpeciesSection({ coSpecies }: {
+function CoSpeciesSection({ coSpecies, biomeAssignments }: {
   coSpecies: CoSpecies[]
+  biomeAssignments?: Map<string, string>
 }) {
   return (
     <div className="level-section">
@@ -244,7 +245,7 @@ function CoSpeciesSection({ coSpecies }: {
           <p style={{ color: '#95a5a6', textAlign: 'center' }}>No co-species generated</p>
         ) : (
           <>
-            {groupAnimalsByBiome(coSpecies).map(([biome, biomeSpecies]) => (
+            {groupAnimalsByBiome(coSpecies, biomeAssignments).map(([biome, biomeSpecies]) => (
               <div key={biome} style={{ marginBottom: '20px' }}>
                 <BiomeChip biome={biome} />
                 <div style={{ 

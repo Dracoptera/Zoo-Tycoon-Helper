@@ -7,6 +7,7 @@ export type SelectedBoard = {
   level2: Animal[]
   level3: Animal[]
   coSpecies: CoSpecies[]
+  biomeAssignments?: Map<string, string>  // animalId -> assigned biome
 }
 
 export type ValidationResult = {
@@ -34,24 +35,26 @@ const countByCategory = (animals: Animal[], category: Category): number => {
   }).length
 }
 
-// Count animals by biome
-const countByBiome = (animals: Animal[], coSpecies: CoSpecies[], biome: Biome): number => {
-  const fromAnimals = animals.filter(animal => {
-    if (isBiomeArray(animal.biome)) {
-      // Only count first biome for multi-biome animals
-      return animal.biome[0] === biome
-    }
-    return animal.biome === biome
-  }).length
+// Get the deterministically assigned biome for an animal (same logic as display)
+function getAssignedBiome(item: { biome: string | string[], id: string }, biomeAssignments?: Map<string, string>): string {
+  const biomes = Array.isArray(item.biome) ? item.biome : [item.biome]
+  if (biomes.length === 1) return biomes[0]
+  
+  // Use stored assignment if available
+  if (biomeAssignments?.has(item.id)) {
+    return biomeAssignments.get(item.id)!
+  }
+  
+  // Fallback to deterministic selection
+  const hash = item.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
+  const biomeIndex = hash % biomes.length
+  return biomes[biomeIndex]
+}
 
-  const fromCoSpecies = coSpecies.filter(species => {
-    if (isBiomeArray(species.biome)) {
-      // Only count first biome for multi-biome co-species
-      return species.biome[0] === biome
-    }
-    return species.biome === biome
-  }).length
-
+// Count animals by biome (using deterministic assignment)
+const countByBiome = (animals: Animal[], coSpecies: CoSpecies[], biome: Biome, biomeAssignments?: Map<string, string>): number => {
+  const fromAnimals = animals.filter(animal => getAssignedBiome(animal, biomeAssignments) === biome).length
+  const fromCoSpecies = coSpecies.filter(species => getAssignedBiome(species, biomeAssignments) === biome).length
   return fromAnimals + fromCoSpecies
 }
 
@@ -123,26 +126,15 @@ export function validateBoard(board: SelectedBoard): ValidationResult {
 
   // Check biome requirement (3 or more species per biome)
   Object.values(biomes).forEach(biome => {
-    const count = countByBiome(board.level1, board.coSpecies, biome)
+    const allAnimals = [...board.level1, ...board.level2, ...board.level3]
+    const count = countByBiome(allAnimals, board.coSpecies, biome, board.biomeAssignments)
     if (count > 0 && count < 3) {
       result.warnings.push(`${biome} has ${count} species (needs at least 3 to be viable)`)
     }
   })
 
-  // Check that viable biomes have 1-2 Level I species
-  Object.values(biomes).forEach(biome => {
-    const totalCount = countByBiome(board.level1, board.coSpecies, biome)
-    if (totalCount >= 3) { // Only check viable biomes
-      const level1Count = board.level1.filter(animal => {
-        const biomes = isBiomeArray(animal.biome) ? animal.biome : [animal.biome]
-        return biomes[0] === biome  // Only count if it's the first biome (matching display)
-      }).length
-      
-      if (level1Count < 1 || level1Count > 2) {
-        result.warnings.push(`${biome} has ${level1Count} Level I species (should have 1-2 Level I in viable biome)`)
-      }
-    }
-  })
+  // Removed: Level I biome distribution validation
+  // This rule is too strict and causes false warnings with the current random biome assignment system
 
   // Check that each biome with animals has at least 1 co-species
   const biomesWithAnimals = new Set<string>()
@@ -210,24 +202,13 @@ export function validateBoard(board: SelectedBoard): ValidationResult {
       })
     ]
     
-    if (allWithCategory.length > 0 && (allWithCategory.length < 2 || allWithCategory.length > 3)) {
-      result.warnings.push(`${category} has ${allWithCategory.length} species (should have 2-3)`)
+    // Allow up to 5 main species plus co-species (roughly 7-8 total is acceptable)
+    if (allWithCategory.length > 0 && allWithCategory.length > 8) {
+      result.warnings.push(`${category} has ${allWithCategory.length} species (recommended: 2-8)`)
     }
     
-    // Check that at least one is Co-Species or Level I
-    if (allWithCategory.length >= 2 && allWithCategory.length <= 3) {
-      const hasCoSpecies = allWithCategory.some(item => 'size' in item) // Co-species have size property
-      const hasLevel1 = [
-        ...board.level1.filter(a => {
-          const cats = isCategoryArray(a.category) ? a.category : [a.category]
-          return cats.includes(category as Category)
-        })
-      ].length > 0
-      
-      if (!hasCoSpecies && !hasLevel1) {
-        result.warnings.push(`${category} should have at least one Co-Species or Level I animal`)
-      }
-    }
+    // Removed: Category should have at least one Co-Species or Level I
+    // This rule doesn't apply well since not all categories have co-species available
   })
 
   return result

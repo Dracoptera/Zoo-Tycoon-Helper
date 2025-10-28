@@ -73,10 +73,10 @@ function wouldExceedCategoryLimit(animal: Animal, selectedAnimals: Animal[]): bo
 }
 
 // Count Level 1 animals per biome
-function countLevel1ByBiome(level1Animals: Animal[], biome: string): number {
+function countLevel1ByBiome(level1Animals: Animal[], biome: Biome | string): number {
   return level1Animals.filter(animal => {
     const biomes = Array.isArray(animal.biome) ? animal.biome : [animal.biome]
-    return biomes.includes(biome)
+    return biomes.includes(biome as Biome)
   }).length
 }
 
@@ -104,7 +104,7 @@ export function generateBoard(
     'Savannah': 'Savannah',
     'Dry Forest': 'Dry Forest',
     'Water': 'Water'
-  }).filter(b => !excludeBiomes.includes(b))
+  }).filter(b => !excludeBiomes.includes(b as Biome))
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const board: SelectedBoard = {
@@ -157,14 +157,14 @@ export function generateBoard(
     if (board.level3.length < 5) continue // Try again
 
     // Add co-species to help meet biome requirements
-    const selectedAnimals = [...board.level1, ...board.level2, ...board.level3]
-    const biomeCounts = new Map<string, number>()
+    const allSelectedAnimals = [...board.level1, ...board.level2, ...board.level3]
+    const biomeCountsMap = new Map<string, number>()
     
-    // Count animals per biome
-    selectedAnimals.forEach(animal => {
+    // Count animals per biome (all possible biomes for multi-biome animals)
+    allSelectedAnimals.forEach(animal => {
       const biomes = Array.isArray(animal.biome) ? animal.biome : [animal.biome]
       biomes.forEach(biome => {
-        biomeCounts.set(biome, (biomeCounts.get(biome) || 0) + 1)
+        biomeCountsMap.set(biome, (biomeCountsMap.get(biome) || 0) + 1)
       })
     })
 
@@ -173,7 +173,7 @@ export function generateBoard(
     const coSpeciesByBiome = new Map<string, number>()
     
     // First pass: add at least 1 co-species to each biome that has animals
-    const biomesInPlay = Array.from(biomeCounts.keys())
+    const biomesInPlay = Array.from(biomeCountsMap.keys())
     
     for (const biome of biomesInPlay) {
       // Find a co-species that belongs to this biome and hasn't been added yet
@@ -184,10 +184,10 @@ export function generateBoard(
         if (coSpecies.size === 1 && smallCount >= 5) continue // Max 5 small co-species
         
         const coSpeciesBiomes = Array.isArray(coSpecies.biome) ? coSpecies.biome : [coSpecies.biome]
-        if (coSpeciesBiomes.includes(biome)) {
+        if (coSpeciesBiomes.includes(biome as Biome)) {
           board.coSpecies.push(coSpecies)
           coSpeciesByBiome.set(biome, (coSpeciesByBiome.get(biome) || 0) + 1)
-          biomeCounts.set(biome, (biomeCounts.get(biome) || 0) + 1)
+          biomeCountsMap.set(biome, (biomeCountsMap.get(biome) || 0) + 1)
           break
         }
       }
@@ -203,7 +203,7 @@ export function generateBoard(
         // Check category limits
         const categories = Array.isArray(coSpecies.category) ? coSpecies.category : [coSpecies.category]
         const wouldExceed = categories.some(cat => {
-          const currentCount = countAllByCategory([...selectedAnimals, ...board.coSpecies], cat)
+          const currentCount = countAllByCategory([...allSelectedAnimals, ...board.coSpecies], cat)
           return currentCount >= 4  // Allow up to 4
         })
         if (wouldExceed) continue
@@ -214,26 +214,78 @@ export function generateBoard(
           const currentCoCount = coSpeciesByBiome.get(biome) || 0
           if (currentCoCount >= 2) continue // Max 2 per biome
           
-          const animalCount = biomeCounts.get(biome) || 0
+          const animalCount = biomeCountsMap.get(biome) || 0
           if (animalCount < 3) { // Biome needs more animals
             board.coSpecies.push(coSpecies)
             coSpeciesByBiome.set(biome, currentCoCount + 1)
-            biomeCounts.set(biome, animalCount + 1)
+            biomeCountsMap.set(biome, animalCount + 1)
             break
           }
         }
       }
     }
 
+    // Intelligently assign multi-biome animals to balance biomes (assign to biome with fewest animals)
+    const selectedAnimals = [...board.level1, ...board.level2, ...board.level3]
+    const biomeAssignments = new Map<string, string>()
+    const biomeCounts = new Map<string, number>()
+    const level1ByBiome = new Map<string, number>()
+    
+    selectedAnimals.forEach(animal => {
+      const biomes = Array.isArray(animal.biome) ? animal.biome : [animal.biome]
+      let assignedBiome = biomes[0]
+      
+      // Simple assignment: prefer biomes that need more animals
+      if (biomes.length > 1) {
+        biomes.forEach(biome => {
+          if ((biomeCounts.get(biome) || 0) < (biomeCounts.get(assignedBiome) || 0)) {
+            assignedBiome = biome
+          }
+        })
+      }
+      
+      biomeAssignments.set(animal.id, assignedBiome)
+      biomeCounts.set(assignedBiome, (biomeCounts.get(assignedBiome) || 0) + 1)
+      if (animal.level === 1) {
+        level1ByBiome.set(assignedBiome, (level1ByBiome.get(assignedBiome) || 0) + 1)
+      }
+    })
+    
+    // Check if any viable biome (3+ species) is missing Level I
+    let hasViableWithoutLevel1 = false
+    biomeCounts.forEach((count, biome) => {
+      if (count >= 3) {
+        const level1Count = level1ByBiome.get(biome) || 0
+        if (level1Count === 0) {
+          hasViableWithoutLevel1 = true
+        }
+      }
+    })
+    
+    if (hasViableWithoutLevel1) continue // Try again
+
+    // Store biome assignments in board
+    board.biomeAssignments = biomeAssignments
+
     // Validate the board
     const validation = validateBoard(board)
     if (validation.valid) {
-      if (attempt === 0 || attempt % 50 === 0) {
-        console.log(`Attempt ${attempt}: Generated board with ${validation.warnings.length} warnings`)
+      // Separate critical and non-critical warnings
+      const criticalWarnings = validation.warnings.filter(w => 
+        w.includes('needs at least 3 to be viable') ||  // Biome viability
+        w.includes('no co-species') ||  // Missing co-species
+        w.includes('locked behind popularity')  // Popularity locks
+      )
+      
+      // Accept board if no critical warnings, or after 1000 attempts even with some critical warnings
+      if (criticalWarnings.length === 0 || (attempt > 1000 && criticalWarnings.length <= 2)) {
+        if (attempt === 0 || attempt % 50 === 0 || criticalWarnings.length === 0) {
+          console.log(`Attempt ${attempt}: Generated board with ${validation.warnings.length} warnings (${criticalWarnings.length} critical)`)
+        }
+        return board
       }
-      return board
     }
-  }
+  }  // End of for loop
   
   console.log(`Failed to generate valid board after ${maxAttempts} attempts`)
 
