@@ -6,6 +6,50 @@ import type { CoSpecies } from './co-species'
 import { type SelectedBoard, validateBoard } from './utils/validation'
 import { generateBoard } from './utils/boardGenerator'
 
+// Biome colors
+const biomeColors: Record<string, string> = {
+  'Tundra & Steppe': '#87CEEB',
+  'Montane Forest': '#228B22',
+  'Rainforest': '#006400',
+  'Savannah': '#DAA520',
+  'Dry Forest': '#CD853F',
+  'Water': '#4682B4'
+}
+
+// Helper function to group animals by biome
+function groupAnimalsByBiome<T extends { biome: string | string[] }>(items: T[]): [string, T[]][] {
+  const grouped = new Map<string, T[]>()
+  items.forEach(item => {
+    const biomes = Array.isArray(item.biome) ? item.biome : [item.biome]
+    biomes.forEach(biome => {
+      if (!grouped.has(biome)) {
+        grouped.set(biome, [])
+      }
+      grouped.get(biome)!.push(item)
+    })
+  })
+  return Array.from(grouped.entries())
+}
+
+// Helper component for biome chip
+function BiomeChip({ biome }: { biome: string }) {
+  const color = biomeColors[biome] || '#95a5a6'
+  return (
+    <div style={{
+      display: 'inline-block',
+      padding: '4px 10px',
+      borderRadius: '12px',
+      background: color,
+      color: '#fff',
+      fontSize: '0.85rem',
+      fontWeight: 'bold',
+      marginBottom: '10px'
+    }}>
+      {biome}
+    </div>
+  )
+}
+
 export default function App() {
   const [board, setBoard] = useState<SelectedBoard | null>(null)
   const [validationResult, setValidationResult] = useState<ReturnType<typeof validateBoard> | null>(null)
@@ -154,22 +198,30 @@ function LevelSection({ level, animals, max }: {
         {animals.length === 0 ? (
           <p style={{ color: '#95a5a6', textAlign: 'center' }}>No animals generated</p>
         ) : (
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
-            gap: '8px' 
-          }}>
-            {animals.map((animal, index) => (
-              <div key={`${animal.id}-${index}`} className="animal-card" style={{ margin: 0 }}>
-                <div>
-                  <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{animal.name}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>
-                    {Array.isArray(animal.category) ? animal.category.join(', ') : animal.category}
-                  </div>
+          <>
+            {groupAnimalsByBiome(animals).map(([biome, biomeAnimals]) => (
+              <div key={biome} style={{ marginBottom: '20px' }}>
+                <BiomeChip biome={biome} />
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
+                  gap: '8px',
+                  marginTop: '10px'
+                }}>
+                  {biomeAnimals.map((animal, index) => (
+                    <div key={`${animal.id}-${index}`} className="animal-card" style={{ margin: 0 }}>
+                      <div>
+                        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{animal.name}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>
+                          {Array.isArray(animal.category) ? animal.category.join(', ') : animal.category}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
-          </div>
+          </>
         )}
       </div>
     </div>
@@ -186,22 +238,30 @@ function CoSpeciesSection({ coSpecies }: {
         {coSpecies.length === 0 ? (
           <p style={{ color: '#95a5a6', textAlign: 'center' }}>No co-species generated</p>
         ) : (
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
-            gap: '8px' 
-          }}>
-            {coSpecies.map((species, index) => (
-              <div key={`${species.id}-${index}`} className="animal-card" style={{ margin: 0 }}>
-                <div>
-                  <div style={{ fontWeight: 'bold' }}>{species.name}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>
-                    {species.size} tile{species.size > 1 ? 's' : ''}
-                  </div>
+          <>
+            {groupAnimalsByBiome(coSpecies).map(([biome, biomeSpecies]) => (
+              <div key={biome} style={{ marginBottom: '20px' }}>
+                <BiomeChip biome={biome} />
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', 
+                  gap: '8px',
+                  marginTop: '10px'
+                }}>
+                  {biomeSpecies.map((species, index) => (
+                    <div key={`${species.id}-${index}`} className="animal-card" style={{ margin: 0 }}>
+                      <div>
+                        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{species.name}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>
+                          {species.size} tile{species.size > 1 ? 's' : ''}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
-          </div>
+          </>
         )}
       </div>
     </div>
