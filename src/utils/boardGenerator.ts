@@ -1,7 +1,6 @@
 import type { Animal } from '../animals'
 import type { CoSpecies } from '../co-species'
 import { SelectedBoard, validateBoard } from './validation'
-import { categories, biomes } from '../constants'
 import type { Category, Biome } from '../constants'
 
 type GenerationOptions = {
@@ -48,14 +47,6 @@ function meetsRequirement(animal: Animal, selectedAnimals: Animal[]): boolean {
   return count >= animal.requirement.count
 }
 
-// Helper to count animals by category
-function countByCategory(animals: Animal[], category: Category): number {
-  return animals.filter(a => {
-    const categories = Array.isArray(a.category) ? a.category : [a.category]
-    return categories.includes(category)
-  }).length
-}
-
 // Helper to count all items (including co-species) by category
 function countAllByCategory(items: (Animal | CoSpecies)[], category: Category): number {
   return items.filter(item => {
@@ -64,48 +55,14 @@ function countAllByCategory(items: (Animal | CoSpecies)[], category: Category): 
   }).length
 }
 
-// Check if adding an animal would exceed category limits (max 4 per category)
-function wouldExceedCategoryLimit(animal: Animal, selectedAnimals: Animal[]): boolean {
-  const categories = Array.isArray(animal.category) ? animal.category : [animal.category]
-  return categories.some(cat => {
-    const count = countByCategory(selectedAnimals, cat)
-    return count >= 4  // Allow up to 4 instead of 3
-  })
-}
-
-// Count Level 1 animals per biome
-function countLevel1ByBiome(level1Animals: Animal[], biome: Biome | string): number {
-  return level1Animals.filter(animal => {
-    const biomes = Array.isArray(animal.biome) ? animal.biome : [animal.biome]
-    return biomes.includes(biome as Biome)
-  }).length
-}
-
-// Check if adding a Level 1 animal to a biome would exceed Level I limit (max 3 per biome)
-function wouldExceedLevel1BiomeLimit(animal: Animal, level1Animals: Animal[]): boolean {
-  if (animal.level !== 1) return false
-  const biomes = Array.isArray(animal.biome) ? animal.biome : [animal.biome]
-  return biomes.some(biome => countLevel1ByBiome(level1Animals, biome) >= 3)  // Allow up to 3
-}
-
 export function generateBoard(
   allAnimals: Animal[],
   allCoSpecies: CoSpecies[],
   options: GenerationOptions = {}
 ): SelectedBoard | null {
-  const { preferredBiomes = [], excludeBiomes = [], seed, strict = false } = options
+  const { seed, strict = false } = options
   const random = seed !== undefined ? seededRandom(seed) : Math.random
   const maxAttempts = strict ? 2000 : 300  // More attempts with relaxed constraints
-
-  // Available biomes (excluding excluded ones)
-  const allBiomes = Object.values({
-    'Tundra & Steppe': 'Tundra & Steppe',
-    'Montane Forest': 'Montane Forest',
-    'Rainforest': 'Rainforest',
-    'Savannah': 'Savannah',
-    'Dry Forest': 'Dry Forest',
-    'Water': 'Water'
-  }).filter(b => !excludeBiomes.includes(b as Biome))
 
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const board: SelectedBoard = {
