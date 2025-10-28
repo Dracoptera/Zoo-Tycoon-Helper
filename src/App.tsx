@@ -17,17 +17,18 @@ const biomeColors: Record<string, string> = {
 }
 
 // Helper function to group animals by biome
-// Animals with multiple biomes are assigned to their first biome only to avoid duplication
-function groupAnimalsByBiome<T extends { biome: string | string[] }>(items: T[]): [string, T[]][] {
+// Animals with multiple biomes are randomly assigned to one biome to avoid duplication
+function groupAnimalsByBiome<T extends { biome: string | string[], id: string }>(items: T[]): [string, T[]][] {
   const grouped = new Map<string, T[]>()
   items.forEach(item => {
     const biomes = Array.isArray(item.biome) ? item.biome : [item.biome]
-    // Assign to first biome only to avoid duplication
-    const firstBiome = biomes[0]
-    if (!grouped.has(firstBiome)) {
-      grouped.set(firstBiome, [])
+    // Randomly select a biome for variety across different boards
+    const randomIndex = Math.floor(Math.random() * biomes.length)
+    const selectedBiome = biomes[randomIndex]
+    if (!grouped.has(selectedBiome)) {
+      grouped.set(selectedBiome, [])
     }
-    grouped.get(firstBiome)!.push(item)
+    grouped.get(selectedBiome)!.push(item)
   })
   return Array.from(grouped.entries())
 }
@@ -56,23 +57,6 @@ export default function App() {
   const [validationResult, setValidationResult] = useState<ReturnType<typeof validateBoard> | null>(null)
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const handleGenerateBoard = () => {
-    setIsGenerating(true)
-    setTimeout(() => {
-      const allAnimals = animalsData.animals as Animal[]
-      const allCoSpecies = coSpeciesData.coSpecies as CoSpecies[]
-      const newBoard = generateBoard(allAnimals, allCoSpecies, {
-        seed: Date.now()
-      })
-      if (newBoard) {
-        setBoard(newBoard)
-        const validation = validateBoard(newBoard)
-        setValidationResult(validation)
-      }
-      setIsGenerating(false)
-    }, 100)
-  }
-
   const handleGenerateBalancedBoard = () => {
     setIsGenerating(true)
     setTimeout(() => {
@@ -86,6 +70,8 @@ export default function App() {
         setBoard(newBoard)
         const validation = validateBoard(newBoard)
         setValidationResult(validation)
+      } else {
+        alert('Could not generate a balanced board after 2000 attempts. Try again or the board may be too restrictive.')
       }
       setIsGenerating(false)
     }, 100)
@@ -122,18 +108,10 @@ Co-Species: ${exportData.coSpecies}
     <div className="container">
       <header>
         <h1>🐾 Zoo Tycoon Animal Exchange Board Creator</h1>
-        <p className="subtitle">Automatically generates valid animal selection boards for your game</p>
+        <p className="subtitle">Automatically generates balanced, valid animal selection boards for your game</p>
       </header>
 
       <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-        <button 
-          className="primary" 
-          onClick={handleGenerateBoard}
-          disabled={isGenerating}
-          style={{ fontSize: '1.2rem', padding: '15px 40px', marginRight: '10px' }}
-        >
-          {isGenerating ? 'Generating...' : '🎲 Generate New Board'}
-        </button>
         <button 
           className="primary" 
           onClick={handleGenerateBalancedBoard}
