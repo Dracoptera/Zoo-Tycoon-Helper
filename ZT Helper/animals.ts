@@ -1513,5 +1513,77 @@ export default {
         "category": categories.BIRD
       }
     },
+    {
+      "id": "black-footed-ferret",
+      "name": "Black-Footed Ferret",
+      "category": categories.CARNIVORE,
+      "biome": biomes.TUNDRA_STEPPE,
+      "level": 3,
+      "basePopularityValue": 1,
+      "educationValue": 2,
+      "conservationValue": 4,
+      "costPerTile": 2,
+      "maxPerTile": 2,
+      "experience": {
+        "level1": 1,
+        "level2": 3,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": 1,
+        "level2": 2,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "requirement": {
+        "count": 2,
+        "category": categories.CARNIVORE
+      }
+    },
+    {
+      "id": "tasmanian-devil",
+      "name": "Tasmanian Devil",
+      "category": categories.MARSUPIAL,
+      "biome": biomes.DRY_FOREST,
+      "level": 3,
+      "basePopularityValue": 2,
+      "educationValue": 2,
+      "conservationValue": 3,
+      "costPerTile": 2,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 3,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "requirement": {
+        "count": 2,
+        "category": categories.MARSUPIAL
+      }
+    },
   ]
 };
