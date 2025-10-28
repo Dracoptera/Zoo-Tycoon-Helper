@@ -27,6 +27,10 @@ export interface Animal {
   freeSpace: LevelValues;
   shelters: LevelValues;
   groupSize: GroupSizeLevelValues;
+  requirement?: {
+    count: number;
+    category: Category;
+  };
 }
 
 export default {
@@ -1471,6 +1475,42 @@ export default {
         "level1": 4,
         "level2": 5,
         "level3": "9+"
+      }
+    },
+    {
+      "id": "bearded-vulture",
+      "name": "Bearded Vulture",
+      "category": categories.BIRD,
+      "biome": biomes.MONTANE_FOREST,
+      "level": 3,
+      "basePopularityValue": 2,
+      "educationValue": 2,
+      "conservationValue": 3,
+      "costPerTile": 2,
+      "maxPerTile": 1,
+      "experience": {
+        "level1": 1,
+        "level2": 3,
+        "level3": 5
+      },
+      "freeSpace": {
+        "level1": null,
+        "level2": 2,
+        "level3": 3
+      },
+      "shelters": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "groupSize": {
+        "level1": null,
+        "level2": 1,
+        "level3": 2
+      },
+      "requirement": {
+        "count": 3,
+        "category": categories.BIRD
       }
     },
   ]
