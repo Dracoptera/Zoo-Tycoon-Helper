@@ -117,7 +117,7 @@ export function validateBoard(board: SelectedBoard, availableCoSpecies?: CoSpeci
     })
   })
   
-  coSpeciesByBiome.forEach((count, biome) => {
+  coSpeciesByBiome.forEach((count: number, biome: Biome) => {
     if (count > 2) {
       result.valid = false
       result.errors.push(`Co-species limit exceeded for ${biome}: ${count}/2`)
@@ -125,7 +125,7 @@ export function validateBoard(board: SelectedBoard, availableCoSpecies?: CoSpeci
   })
 
   // Check biome requirement (3 or more species per biome)
-  Object.values(biomes).forEach(biome => {
+  Object.values(biomes).forEach((biome: Biome) => {
     const allAnimalsForBiome = [...board.level1, ...board.level2, ...board.level3]
     const count = countByBiome(allAnimalsForBiome, board.coSpecies, biome, board.biomeAssignments)
     if (count > 0 && count < 3) {

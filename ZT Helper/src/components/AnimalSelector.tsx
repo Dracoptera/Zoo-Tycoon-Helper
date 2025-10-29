@@ -1,6 +1,6 @@
-import { useState } from 'react'
-import type { Animal } from '../animals'
-import type { CoSpecies } from '../co-species'
+import React, { useState } from 'react'
+import type { Animal } from '../../../src/animals'
+import type { CoSpecies } from '../../../src/co-species'
 
 type AnimalSelectorProps = {
   type: 'animal' | 'coSpecies'
@@ -20,8 +20,8 @@ export default function AnimalSelector({ type, items, title, onSelect, onClose }
     
     if (selectedCategory !== 'all' && type === 'animal') {
       const animal = item as Animal
-      const categories = Array.isArray(animal.category) ? animal.category : [animal.category]
-      matchesCategory = categories.some(c => c.toLowerCase() === selectedCategory.toLowerCase())
+      const itemCategories = Array.isArray(animal.category) ? animal.category : [animal.category]
+      matchesCategory = itemCategories.some(c => c.toLowerCase() === selectedCategory.toLowerCase())
     }
     
     return matchesSearch && matchesCategory
@@ -161,4 +161,3 @@ export default function AnimalSelector({ type, items, title, onSelect, onClose }
     </div>
   )
 }
-
