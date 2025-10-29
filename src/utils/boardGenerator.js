@@ -63,6 +63,70 @@ export function getExcludedAnimalsForBaseGameMode(allAnimals) {
         return !hasValidGroupSize;
     });
 }
+// Get replacement mappings - which generated animals replace which Base Game animals
+export function getReplacementMappings(generatedBoard, allAnimals) {
+    const baseGameBoard = sampleBoards.find(b => b.name === 'Base Game');
+    if (!baseGameBoard)
+        return [];
+    const allAnimalsMap = new Map(allAnimals.map(a => [a.id, a]));
+    const getBaseGameAnimalsForLevel = (level) => {
+        const ids = level === 1 ? baseGameBoard.board.level1 :
+            level === 2 ? baseGameBoard.board.level2 :
+                baseGameBoard.board.level3;
+        return ids.map(id => {
+            const animalId = typeof id === 'string' ? id : id.id;
+            return allAnimalsMap.get(animalId);
+        }).filter((a) => a !== undefined);
+    };
+    const replacements = [];
+    // For each generated animal, find the best Base Game match at the same level
+    const addReplacementsForLevel = (generated, baseGame) => {
+        generated.forEach(genAnimal => {
+            // Find Base Game animals with matching group sizes
+            const matchingGroupSizes = new Set();
+            if (genAnimal.groupSize.level1 !== null)
+                matchingGroupSizes.add(genAnimal.groupSize.level1);
+            if (genAnimal.groupSize.level2 !== null)
+                matchingGroupSizes.add(genAnimal.groupSize.level2);
+            if (genAnimal.groupSize.level3 !== null)
+                matchingGroupSizes.add(genAnimal.groupSize.level3);
+            // Find Base Game animals with at least one matching group size
+            const potentialMatches = baseGame.filter(bgAnimal => {
+                const bgSizes = new Set();
+                if (bgAnimal.groupSize.level1 !== null)
+                    bgSizes.add(bgAnimal.groupSize.level1);
+                if (bgAnimal.groupSize.level2 !== null)
+                    bgSizes.add(bgAnimal.groupSize.level2);
+                if (bgAnimal.groupSize.level3 !== null)
+                    bgSizes.add(bgAnimal.groupSize.level3);
+                // Check if there's any overlap in group sizes
+                return Array.from(matchingGroupSizes).some(size => bgSizes.has(size));
+            });
+            // Prefer animals with more matching group sizes
+            let bestMatch = null;
+            let bestMatchCount = 0;
+            potentialMatches.forEach(match => {
+                const matchSizes = new Set();
+                if (match.groupSize.level1 !== null)
+                    matchSizes.add(match.groupSize.level1);
+                if (match.groupSize.level2 !== null)
+                    matchSizes.add(match.groupSize.level2);
+                if (match.groupSize.level3 !== null)
+                    matchSizes.add(match.groupSize.level3);
+                const overlapCount = Array.from(matchingGroupSizes).filter(size => matchSizes.has(size)).length;
+                if (overlapCount > bestMatchCount) {
+                    bestMatchCount = overlapCount;
+                    bestMatch = match;
+                }
+            });
+            replacements.push({ generated: genAnimal, baseGame: bestMatch || null });
+        });
+    };
+    addReplacementsForLevel(generatedBoard.level1, getBaseGameAnimalsForLevel(1));
+    addReplacementsForLevel(generatedBoard.level2, getBaseGameAnimalsForLevel(2));
+    addReplacementsForLevel(generatedBoard.level3, getBaseGameAnimalsForLevel(3));
+    return replacements;
+}
 function meetsRequirement(animal, selectedAnimals) {
     if (!animal.requirement)
         return true;

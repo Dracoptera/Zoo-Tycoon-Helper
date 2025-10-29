@@ -4,7 +4,7 @@ import coSpeciesData from './co-species'
 import type { Animal } from './animals'
 import type { CoSpecies } from './co-species'
 import { type SelectedBoard, validateBoard } from './utils/validation'
-import { generateBoard, getExcludedAnimalsForBaseGameMode } from './utils/boardGenerator'
+import { generateBoard, getReplacementMappings } from './utils/boardGenerator'
 import { biomes } from './constants'
 import type { Biome } from './constants'
 
@@ -60,11 +60,11 @@ export default function App() {
   const [requiredAnimalIds, setRequiredAnimalIds] = useState<string[]>([])
   const [isFilterExpanded, setIsFilterExpanded] = useState(false)
   const [selectedBiomes, setSelectedBiomes] = useState<Biome[]>([])
-  const [excludedAnimals, setExcludedAnimals] = useState<Animal[]>([])
+  const [replacementMappings, setReplacementMappings] = useState<{ generated: Animal, baseGame: Animal | null }[]>([])
 
   const handleGenerateBalancedBoard = () => {
     setIsGenerating(true)
-    setExcludedAnimals([]) // Clear excluded animals for balanced mode
+    setReplacementMappings([]) // Clear replacement mappings for balanced mode
     setTimeout(() => {
       const allAnimals = animalsData.animals as Animal[]
       const allCoSpecies = coSpeciesData.coSpecies as CoSpecies[]
@@ -93,10 +93,6 @@ export default function App() {
       const allAnimals = animalsData.animals as Animal[]
       const allCoSpecies = coSpeciesData.coSpecies as CoSpecies[]
       
-      // Calculate excluded animals for display
-      const excluded = getExcludedAnimalsForBaseGameMode(allAnimals)
-      setExcludedAnimals(excluded)
-      
       const newBoard = generateBoard(allAnimals, allCoSpecies, {
         seed: Date.now(),
         strict: true,
@@ -106,6 +102,11 @@ export default function App() {
       })
       if (newBoard) {
         setBoard(newBoard)
+        
+        // Calculate replacement mappings
+        const mappings = getReplacementMappings(newBoard, allAnimals)
+        setReplacementMappings(mappings)
+        
         // Pass available co-species to validation so it knows which biomes have co-species
         const validation = validateBoard(newBoard, allCoSpecies)
         setValidationResult(validation)
@@ -295,38 +296,44 @@ Co-Species: ${exportData.coSpecies}
         </button>
       </div>
 
-      {excludedAnimals.length > 0 && (
+      {replacementMappings.length > 0 && (
         <div style={{
-          background: '#fff3cd',
-          border: '2px solid #ffc107',
+          background: '#d1ecf1',
+          border: '2px solid #17a2b8',
           borderRadius: '8px',
           padding: '20px',
           marginBottom: '20px'
         }}>
-          <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#856404' }}>
-            🚫 Animals Excluded from Base Game Compatible Mode
+          <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#0c5460' }}>
+            🔄 Animal Replacements for Base Game Compatible Mode
           </h3>
-          <p style={{ fontSize: '0.9rem', color: '#856404', marginBottom: '15px' }}>
-            The following {excludedAnimals.length} animal{excludedAnimals.length > 1 ? 's have' : ' has'} been excluded because they don't have group sizes compatible with Base Game animals:
+          <p style={{ fontSize: '0.9rem', color: '#0c5460', marginBottom: '15px' }}>
+            The following animals from your generated board replace these Base Game animals due to compatible group sizes:
           </p>
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', 
-            gap: '8px',
-            maxHeight: '200px',
-            overflowY: 'auto',
-            padding: '10px',
-            background: '#fff',
-            borderRadius: '4px'
+            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', 
+            gap: '10px'
           }}>
-            {excludedAnimals.map(animal => (
-              <div key={animal.id} style={{ 
-                padding: '5px 10px', 
-                background: '#f8f9fa', 
+            {replacementMappings.map((mapping, idx) => (
+              <div key={`${mapping.generated.id}-${idx}`} style={{ 
+                padding: '10px', 
+                background: '#fff', 
                 borderRadius: '4px',
-                fontSize: '0.9rem'
+                border: '1px solid #bee5eb'
               }}>
-                {animal.name}
+                <div style={{ fontWeight: 'bold', fontSize: '0.95rem', marginBottom: '4px' }}>
+                  {mapping.generated.name}
+                </div>
+                {mapping.baseGame ? (
+                  <div style={{ fontSize: '0.85rem', color: '#666' }}>
+                    → replaces <strong>{mapping.baseGame.name}</strong>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.85rem', color: '#999' }}>
+                    → no close match found
+                  </div>
+                )}
               </div>
             ))}
           </div>
