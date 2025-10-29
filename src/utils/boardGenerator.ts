@@ -69,6 +69,24 @@ function getBaseGameGroupSizes(): Set<string | number> {
   return groupSizes
 }
 
+// Get animals excluded when using Base Game compatible mode
+export function getExcludedAnimalsForBaseGameMode(allAnimals: Animal[]): Animal[] {
+  const validGroupSizes = getBaseGameGroupSizes()
+  
+  return allAnimals.filter(animal => {
+    // An animal is excluded if none of its group sizes match Base Game
+    const groupSize1 = animal.groupSize.level1
+    const groupSize2 = animal.groupSize.level2
+    const groupSize3 = animal.groupSize.level3
+    
+    const hasValidGroupSize = (groupSize1 !== null && validGroupSizes.has(groupSize1)) ||
+                              (groupSize2 !== null && validGroupSizes.has(groupSize2)) ||
+                              (groupSize3 !== null && validGroupSizes.has(groupSize3))
+    
+    return !hasValidGroupSize
+  })
+}
+
 function meetsRequirement(animal: Animal, selectedAnimals: Animal[]): boolean {
   if (!animal.requirement) return true
   

@@ -1,6 +1,6 @@
-import type { Animal } from '../animals'
-import type { CoSpecies } from '../co-species'
-import { categories, biomes, Category, Biome } from '../constants'
+import type { Animal } from '../../../src/animals'
+import type { CoSpecies } from '../../../src/co-species'
+import { biomes, Category, Biome } from '../../../src/constants'
 
 export type SelectedBoard = {
   level1: Animal[]
@@ -58,22 +58,24 @@ const isRequirementSatisfied = (
   board: SelectedBoard,
   requirement: { count: number; category: Category | Category[] }
 ): boolean => {
-  const allAnimals = [...board.level1, ...board.level2, ...board.level3, ...board.coSpecies]
+  const allAnimals = [...board.level1, ...board.level2, ...board.level3]
+  const allItems = [...allAnimals, ...board.coSpecies]
   
   if (isCategoryArray(requirement.category)) {
     // Multiple categories allowed
     const total = requirement.category.reduce((sum, cat) => {
-      return sum + allAnimals.filter(animal => {
-        if (isCategoryArray(animal.category)) {
-          return animal.category.includes(cat)
+      return sum + allItems.filter(item => {
+        if (isCategoryArray(item.category)) {
+          return item.category.includes(cat)
         }
-        return animal.category === cat
+        return item.category === cat
       }).length
     }, 0)
     return total >= requirement.count
   } else {
-    // Single category
-    return countByCategory(allAnimals, requirement.category) >= requirement.count
+    // Single category - only count animals, not co-species
+    const animalsOnly = [...board.level1, ...board.level2, ...board.level3]
+    return countByCategory(animalsOnly, requirement.category) >= requirement.count
   }
 }
 
@@ -109,7 +111,7 @@ export function validateBoard(board: SelectedBoard): ValidationResult {
   const coSpeciesByBiome = new Map<Biome, number>()
   board.coSpecies.forEach(species => {
     const biomes = isBiomeArray(species.biome) ? species.biome : [species.biome]
-    biomes.forEach(b => {
+    biomes.forEach((b: Biome) => {
       coSpeciesByBiome.set(b, (coSpeciesByBiome.get(b) || 0) + 1)
     })
   })
@@ -122,7 +124,6 @@ export function validateBoard(board: SelectedBoard): ValidationResult {
   })
 
   // Check biome requirement (3 or more species per biome)
-  const allAnimals = [...board.level1, ...board.level2, ...board.level3, ...board.coSpecies]
   Object.values(biomes).forEach(biome => {
     const count = countByBiome(board.level1, board.coSpecies, biome)
     if (count > 0 && count < 3) {
@@ -134,7 +135,7 @@ export function validateBoard(board: SelectedBoard): ValidationResult {
   const allAnimalsForReq = [...board.level1, ...board.level2, ...board.level3]
   allAnimalsForReq.forEach(animal => {
     if (animal.requirement) {
-      const satisfied = isRequirementSatisfied(allAnimalsForReq, animal.requirement)
+      const satisfied = isRequirementSatisfied(board, animal.requirement)
       if (!satisfied) {
         result.valid = false
         const reqCategories = isCategoryArray(animal.requirement.category) 

@@ -4,7 +4,7 @@ import coSpeciesData from './co-species'
 import type { Animal } from './animals'
 import type { CoSpecies } from './co-species'
 import { type SelectedBoard, validateBoard } from './utils/validation'
-import { generateBoard } from './utils/boardGenerator'
+import { generateBoard, getExcludedAnimalsForBaseGameMode } from './utils/boardGenerator'
 import { biomes } from './constants'
 import type { Biome } from './constants'
 
@@ -60,9 +60,11 @@ export default function App() {
   const [requiredAnimalIds, setRequiredAnimalIds] = useState<string[]>([])
   const [isFilterExpanded, setIsFilterExpanded] = useState(false)
   const [selectedBiomes, setSelectedBiomes] = useState<Biome[]>([])
+  const [excludedAnimals, setExcludedAnimals] = useState<Animal[]>([])
 
   const handleGenerateBalancedBoard = () => {
     setIsGenerating(true)
+    setExcludedAnimals([]) // Clear excluded animals for balanced mode
     setTimeout(() => {
       const allAnimals = animalsData.animals as Animal[]
       const allCoSpecies = coSpeciesData.coSpecies as CoSpecies[]
@@ -90,6 +92,11 @@ export default function App() {
     setTimeout(() => {
       const allAnimals = animalsData.animals as Animal[]
       const allCoSpecies = coSpeciesData.coSpecies as CoSpecies[]
+      
+      // Calculate excluded animals for display
+      const excluded = getExcludedAnimalsForBaseGameMode(allAnimals)
+      setExcludedAnimals(excluded)
+      
       const newBoard = generateBoard(allAnimals, allCoSpecies, {
         seed: Date.now(),
         strict: true,
@@ -287,6 +294,44 @@ Co-Species: ${exportData.coSpecies}
            '🎲 Generate Board compatible with Base Game Sheet'}
         </button>
       </div>
+
+      {excludedAnimals.length > 0 && (
+        <div style={{
+          background: '#fff3cd',
+          border: '2px solid #ffc107',
+          borderRadius: '8px',
+          padding: '20px',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#856404' }}>
+            🚫 Animals Excluded from Base Game Compatible Mode
+          </h3>
+          <p style={{ fontSize: '0.9rem', color: '#856404', marginBottom: '15px' }}>
+            The following {excludedAnimals.length} animal{excludedAnimals.length > 1 ? 's have' : ' has'} been excluded because they don't have group sizes compatible with Base Game animals:
+          </p>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))', 
+            gap: '8px',
+            maxHeight: '200px',
+            overflowY: 'auto',
+            padding: '10px',
+            background: '#fff',
+            borderRadius: '4px'
+          }}>
+            {excludedAnimals.map(animal => (
+              <div key={animal.id} style={{ 
+                padding: '5px 10px', 
+                background: '#f8f9fa', 
+                borderRadius: '4px',
+                fontSize: '0.9rem'
+              }}>
+                {animal.name}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {validationResult && (
         <div style={{
