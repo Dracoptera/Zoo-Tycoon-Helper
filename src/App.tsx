@@ -5,6 +5,7 @@ import type { Animal } from './animals'
 import type { CoSpecies } from './co-species'
 import { type SelectedBoard, validateBoard } from './utils/validation'
 import { generateBoard, getReplacementMappings } from './utils/boardGenerator'
+import { generateBalancedParks } from './utils/parkGenerator'
 import { biomes } from './constants'
 import type { Biome } from './constants'
 import { nationalParks, checkNationalParkStatus } from './nationalParks'
@@ -64,6 +65,12 @@ export default function App() {
   const [replacementMappings, setReplacementMappings] = useState<{ generated: Animal, baseGame: Animal | null }[]>([])
   const [preservedNationalParks, setPreservedNationalParks] = useState<string[]>([])
   const [brokenNationalParks, setBrokenNationalParks] = useState<{ parkName: string, missing: string[] }[]>([])
+  const [generatedParks, setGeneratedParks] = useState<ReturnType<typeof generateBalancedParks>>([])
+  const [parkCount, setParkCount] = useState<number>(3)
+  const [parkSize, setParkSize] = useState<4 | 5>(5)
+  const [parksCompatible, setParksCompatible] = useState<boolean>(false)
+  const [isBiomesExpanded, setIsBiomesExpanded] = useState<boolean>(true)
+  const [isParksPreserveExpanded, setIsParksPreserveExpanded] = useState<boolean>(true)
 
   const handleGenerateBalancedBoard = () => {
     setIsGenerating(true)
@@ -182,61 +189,75 @@ Co-Species: ${exportData.coSpecies}
       </header>
 
       <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '15px' }}>Select Biomes</h3>
-        <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '15px' }}>
-          Choose 4 biomes to focus on, or leave empty to use all biomes.
-        </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-          {Object.values(biomes).map(biome => (
-            <label
-              key={biome}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                padding: '10px 15px',
-                border: `2px solid ${biomeColors[biome]}`,
-                borderRadius: '8px',
-                cursor: 'pointer',
-                backgroundColor: selectedBiomes.includes(biome as Biome) ? biomeColors[biome] : 'transparent',
-                color: selectedBiomes.includes(biome as Biome) ? '#fff' : '#333',
-                opacity: selectedBiomes.length >= 4 && !selectedBiomes.includes(biome as Biome) ? 0.3 : 1
-              }}
-            >
-              <input
-                type="checkbox"
-                checked={selectedBiomes.includes(biome as Biome)}
-                onChange={() => {
-                  if (selectedBiomes.includes(biome as Biome)) {
-                    setSelectedBiomes(selectedBiomes.filter(b => b !== biome))
-                  } else if (selectedBiomes.length < 4) {
-                    setSelectedBiomes([...selectedBiomes, biome as Biome])
-                  }
-                }}
-                disabled={selectedBiomes.length >= 4 && !selectedBiomes.includes(biome as Biome)}
-                style={{ marginRight: '8px' }}
-              />
-              {biome}
-            </label>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+          <button 
+            onClick={() => setIsBiomesExpanded(!isBiomesExpanded)}
+            style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', padding: '5px' }}
+          >
+            {isBiomesExpanded ? '▼' : '▶'}
+          </button>
+          <h3 style={{ margin: 0 }}>Select Biomes</h3>
         </div>
-        {selectedBiomes.length > 0 && (
-          <div style={{ marginTop: '15px' }}>
-            <button 
-              onClick={() => setSelectedBiomes([])}
-              style={{ 
-                background: '#dc3545', 
-                color: 'white',
-                border: 'none',
-                padding: '8px 15px',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Clear Selection
-            </button>
-          </div>
+        {isBiomesExpanded && (
+          <>
+            <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '15px' }}>
+              Choose 4 biomes to focus on, or leave empty to use all biomes.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+              {Object.values(biomes).map(biome => (
+                <label
+                  key={biome}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '10px 15px',
+                    border: `2px solid ${biomeColors[biome]}`,
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    backgroundColor: selectedBiomes.includes(biome as Biome) ? biomeColors[biome] : 'transparent',
+                    color: selectedBiomes.includes(biome as Biome) ? '#fff' : '#333',
+                    opacity: selectedBiomes.length >= 4 && !selectedBiomes.includes(biome as Biome) ? 0.3 : 1
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedBiomes.includes(biome as Biome)}
+                    onChange={() => {
+                      if (selectedBiomes.includes(biome as Biome)) {
+                        setSelectedBiomes(selectedBiomes.filter(b => b !== biome))
+                      } else if (selectedBiomes.length < 4) {
+                        setSelectedBiomes([...selectedBiomes, biome as Biome])
+                      }
+                    }}
+                    disabled={selectedBiomes.length >= 4 && !selectedBiomes.includes(biome as Biome)}
+                    style={{ marginRight: '8px' }}
+                  />
+                  {biome}
+                </label>
+              ))}
+            </div>
+            {selectedBiomes.length > 0 && (
+              <div style={{ marginTop: '15px' }}>
+                <button 
+                  onClick={() => setSelectedBiomes([])}
+                  style={{ 
+                    background: '#dc3545', 
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px 15px',
+                    borderRadius: '4px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Clear Selection
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
+
+      
 
       <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px渡航4px rgba(0,0,0,0.1)' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
@@ -292,10 +313,21 @@ Co-Species: ${exportData.coSpecies}
       </div>
 
       <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-        <h3 style={{ marginTop: 0, marginBottom: '15px' }}>Preserve National Parks</h3>
-        <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '15px' }}>
-          Select up to 5 National Parks (Base or Expansion) to preserve in your generated board:
-        </p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+          <button 
+            onClick={() => setIsParksPreserveExpanded(!isParksPreserveExpanded)}
+            style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', padding: '5px' }}
+          >
+            {isParksPreserveExpanded ? '▼' : '▶'}
+          </button>
+          <h3 style={{ margin: 0 }}>Preserve National Parks</h3>
+        </div>
+        {isParksPreserveExpanded && (
+          <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '15px' }}>
+            Select up to 5 National Parks (Base or Expansion) to preserve in your generated board:
+          </p>
+        )}
+        {isParksPreserveExpanded && (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
           <div>
             <h4 style={{ margin: '0 0 10px 0', color: '#6c757d' }}>Base Game</h4>
@@ -374,7 +406,8 @@ Co-Species: ${exportData.coSpecies}
             </div>
           </div>
         </div>
-        {preservedNationalParks.length > 0 && (
+        )}
+        {isParksPreserveExpanded && preservedNationalParks.length > 0 && (
           <div style={{ marginTop: '15px' }}>
             <button 
               onClick={() => setPreservedNationalParks([])}
@@ -577,6 +610,90 @@ Co-Species: ${exportData.coSpecies}
           </p>
         </div>
       )}
+
+      {/* Bottom: Generate Balanced Parks */}
+      <div style={{ marginTop: '30px', marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '15px' }}>Generate Balanced Parks</h3>
+        {!board && (
+          <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '12px' }}>
+            Generate a board first to enable park generation.
+          </p>
+        )}
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center', marginBottom: '12px', opacity: board ? 1 : 0.6 }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>Count</span>
+            <select value={parkCount} onChange={e => setParkCount(parseInt(e.target.value))} disabled={!board}>
+              {[3,4,5].map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span>Size</span>
+            <select value={parkSize} onChange={e => setParkSize(parseInt(e.target.value) as 4 | 5)} disabled={!board}>
+              {[4,5].map(n => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <input type="checkbox" checked={parksCompatible} onChange={e => setParksCompatible(e.target.checked)} disabled={!board} />
+            <span>Base Game compatible sizes</span>
+          </label>
+          <button
+            onClick={() => {
+              if (!board) return
+              const boardAnimals = [...board.level1, ...board.level2, ...board.level3] as Animal[]
+              const parks = generateBalancedParks(boardAnimals, {
+                count: parkCount,
+                size: parkSize,
+                selectedBiomes: selectedBiomes.length > 0 ? selectedBiomes : undefined,
+                compatibleWithBaseGame: parksCompatible,
+                seed: Date.now()
+              })
+              setGeneratedParks(parks)
+            }}
+            className="primary"
+            style={{ padding: '8px 16px', cursor: board ? 'pointer' : 'not-allowed', background: board ? undefined : '#ccc' }}
+            disabled={!board}
+          >
+            Generate Parks
+          </button>
+        </div>
+
+        {generatedParks.length > 0 && (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+            {generatedParks.map((park, idx) => {
+              const color = biomeColors[park.biome] || '#6c757d'
+              const animalsById = new Map((animalsData.animals as Animal[]).map(a => [a.id, a]))
+              return (
+                <div key={park.id || idx} style={{ border: `2px solid ${color}`, borderRadius: 8, background: '#fff' }}>
+                  <div style={{ background: color, color: '#fff', padding: '8px 12px', borderTopLeftRadius: 6, borderTopRightRadius: 6 }}>
+                    <strong>{park.name}</strong>
+                    <span style={{ marginLeft: 8, opacity: 0.9 }}>({park.biome})</span>
+                  </div>
+                  <div style={{ padding: '10px 12px' }}>
+                    <ul style={{ margin: 0, paddingLeft: '18px' }}>
+                      {park.animalIds.map(id => (
+                        <li key={id} style={{ marginBottom: 4 }}>{animalsById.get(id)?.name || id}</li>
+                      ))}
+                    </ul>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
+                      <button
+                        onClick={() => {
+                          const requiredSet = new Set(requiredAnimalIds)
+                          park.animalIds.forEach(id => requiredSet.add(id))
+                          setRequiredAnimalIds(Array.from(requiredSet))
+                        }}
+                        className="primary"
+                      >
+                        Require these animals
+                      </button>
+                      <span style={{ fontSize: '0.85rem', color: '#666' }}>Score: {park.score.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
