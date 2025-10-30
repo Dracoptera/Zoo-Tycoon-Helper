@@ -7,6 +7,7 @@ import { type SelectedBoard, validateBoard } from './utils/validation'
 import { generateBoard, getReplacementMappings } from './utils/boardGenerator'
 import { biomes } from './constants'
 import type { Biome } from './constants'
+import { nationalParks, checkNationalParkStatus } from './nationalParks'
 
 // Biome colors
 const biomeColors: Record<string, string> = {
@@ -61,10 +62,13 @@ export default function App() {
   const [isFilterExpanded, setIsFilterExpanded] = useState(false)
   const [selectedBiomes, setSelectedBiomes] = useState<Biome[]>([])
   const [replacementMappings, setReplacementMappings] = useState<{ generated: Animal, baseGame: Animal | null }[]>([])
+  const [preservedNationalParks, setPreservedNationalParks] = useState<string[]>([])
+  const [brokenNationalParks, setBrokenNationalParks] = useState<{ parkName: string, missing: string[] }[]>([])
 
   const handleGenerateBalancedBoard = () => {
     setIsGenerating(true)
     setReplacementMappings([]) // Clear replacement mappings for balanced mode
+    setBrokenNationalParks([]) // Clear broken parks
     setTimeout(() => {
       const allAnimals = animalsData.animals as Animal[]
       const allCoSpecies = coSpeciesData.coSpecies as CoSpecies[]
@@ -72,7 +76,8 @@ export default function App() {
         seed: Date.now(),
         strict: true,
         requiredAnimals: requiredAnimalIds,
-        selectedBiomes: selectedBiomes.length > 0 ? selectedBiomes : undefined
+        selectedBiomes: selectedBiomes.length > 0 ? selectedBiomes : undefined,
+        preserveNationalParks: preservedNationalParks
       })
       if (newBoard) {
         setBoard(newBoard)
@@ -98,7 +103,8 @@ export default function App() {
         strict: true,
         requiredAnimals: requiredAnimalIds,
         selectedBiomes: selectedBiomes.length > 0 ? selectedBiomes : undefined,
-        compatibleWithBaseGame: true
+        compatibleWithBaseGame: true,
+        preserveNationalParks: preservedNationalParks
       })
       if (newBoard) {
         setBoard(newBoard)
@@ -106,6 +112,29 @@ export default function App() {
         // Calculate replacement mappings
         const mappings = getReplacementMappings(newBoard, allAnimals)
         setReplacementMappings(mappings)
+        
+        // Check which Base Game National Parks are broken
+        const allAnimalsMap = new Map(allAnimals.map(a => [a.id, a]))
+        const boardAnimalIds = new Set([...newBoard.level1, ...newBoard.level2, ...newBoard.level3].map(a => a.id))
+        const boardCoSpeciesIds = new Set(newBoard.coSpecies.map(c => c.id))
+        
+        const broken = nationalParks
+          .filter(park => park.game === 'base')
+          .map(park => {
+            const status = checkNationalParkStatus(park, boardAnimalIds, boardCoSpeciesIds)
+            if (!status.complete) {
+              const missingNames = status.missing.map(id => {
+                if (id.includes('OR')) return id
+                const animal = allAnimalsMap.get(id)
+                return animal ? animal.name : id
+              })
+              return { parkName: park.name, missing: missingNames }
+            }
+            return null
+          })
+          .filter((p): p is { parkName: string, missing: string[] } => p !== null)
+        
+        setBrokenNationalParks(broken)
         
         // Pass available co-species to validation so it knows which biomes have co-species
         const validation = validateBoard(newBoard, allCoSpecies)
@@ -262,6 +291,108 @@ Co-Species: ${exportData.coSpecies}
         )}
       </div>
 
+      <div style={{ marginBottom: '30px', padding: '20px', background: 'white', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+        <h3 style={{ marginTop: 0, marginBottom: '15px' }}>Preserve National Parks</h3>
+        <p style={{ fontSize: '0.9rem', color: '#666', marginBottom: '15px' }}>
+          Select up to 5 National Parks (Base or Expansion) to preserve in your generated board:
+        </p>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+          <div>
+            <h4 style={{ margin: '0 0 10px 0', color: '#6c757d' }}>Base Game</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {nationalParks.filter(park => park.game === 'base').map(park => (
+                <label
+                  key={park.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '10px 15px',
+                    border: `2px solid ${biomeColors[park.biome] || '#6f42c1'}`,
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    backgroundColor: preservedNationalParks.includes(park.id) ? (biomeColors[park.biome] || '#6f42c1') : 'transparent',
+                    color: preservedNationalParks.includes(park.id) ? '#fff' : '#333',
+                    opacity: !preservedNationalParks.includes(park.id) && preservedNationalParks.length >= 5 ? 0.5 : 1
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={preservedNationalParks.includes(park.id)}
+                    disabled={!preservedNationalParks.includes(park.id) && preservedNationalParks.length >= 5}
+                    onChange={() => {
+                      if (preservedNationalParks.includes(park.id)) {
+                        setPreservedNationalParks(preservedNationalParks.filter(id => id !== park.id))
+                      } else {
+                        if (preservedNationalParks.length < 5) {
+                          setPreservedNationalParks([...preservedNationalParks, park.id])
+                        }
+                      }
+                    }}
+                    style={{ marginRight: '8px' }}
+                  />
+                  {park.name}
+                </label>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h4 style={{ margin: '0 0 10px 0', color: '#6c757d' }}>Expansion</h4>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {nationalParks.filter(park => park.game === 'expansion').map(park => (
+                <label
+                  key={park.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '10px 15px',
+                    border: `2px solid ${biomeColors[park.biome] || '#6f42c1'}`,
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    backgroundColor: preservedNationalParks.includes(park.id) ? (biomeColors[park.biome] || '#6f42c1') : 'transparent',
+                    color: preservedNationalParks.includes(park.id) ? '#fff' : '#333',
+                    opacity: !preservedNationalParks.includes(park.id) && preservedNationalParks.length >= 5 ? 0.5 : 1
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={preservedNationalParks.includes(park.id)}
+                    disabled={!preservedNationalParks.includes(park.id) && preservedNationalParks.length >= 5}
+                    onChange={() => {
+                      if (preservedNationalParks.includes(park.id)) {
+                        setPreservedNationalParks(preservedNationalParks.filter(id => id !== park.id))
+                      } else {
+                        if (preservedNationalParks.length < 5) {
+                          setPreservedNationalParks([...preservedNationalParks, park.id])
+                        }
+                      }
+                    }}
+                    style={{ marginRight: '8px' }}
+                  />
+                  {park.name}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+        {preservedNationalParks.length > 0 && (
+          <div style={{ marginTop: '15px' }}>
+            <button 
+              onClick={() => setPreservedNationalParks([])}
+              style={{ 
+                background: '#dc3545', 
+                color: 'white',
+                border: 'none',
+                padding: '8px 15px',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              Clear Selection
+            </button>
+          </div>
+        )}
+      </div>
+
       <div style={{ textAlign: 'center', marginBottom: '30px' }}>
         <button 
           className="primary" 
@@ -337,6 +468,47 @@ Co-Species: ${exportData.coSpecies}
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {brokenNationalParks.length > 0 && (
+        <div style={{
+          background: '#f8d7da',
+          border: '2px solid #dc3545',
+          borderRadius: '8px',
+          padding: '20px',
+          marginBottom: '20px'
+        }}>
+          <h3 style={{ marginTop: 0, marginBottom: '15px', color: '#721c24' }}>
+            ⚠️ Broken National Parks
+          </h3>
+          <p style={{ fontSize: '0.9rem', color: '#721c24', marginBottom: '15px' }}>
+            The following Base Game National Parks are incomplete in your generated board:
+          </p>
+          <div style={{ 
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '10px'
+          }}>
+            {brokenNationalParks.map((park, idx) => (
+              <div key={idx} style={{ 
+                padding: '12px', 
+                background: '#fff', 
+                borderRadius: '4px',
+                border: '1px solid #f5c6cb'
+              }}>
+                <div style={{ fontWeight: 'bold', fontSize: '1rem', marginBottom: '6px', color: '#721c24' }}>
+                  {park.parkName}
+                </div>
+                <div style={{ fontSize: '0.9rem', color: '#721c24' }}>
+                  Missing: {park.missing.join(', ')}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: '0.85rem', color: '#721c24', marginTop: '15px', fontStyle: 'italic' }}>
+            Tip: Use the "Preserve National Parks" checkboxes above to keep specific parks intact.
+          </p>
         </div>
       )}
 

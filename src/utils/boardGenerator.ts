@@ -4,6 +4,7 @@ import { SelectedBoard, validateBoard } from './validation'
 import type { Category, Biome } from '../constants'
 import { sampleBoards } from '../sampleBoards'
 import animalsData from '../animals'
+import { getNationalParkAnimals } from '../nationalParks'
 
 type GenerationOptions = {
   preferredBiomes?: Biome[]
@@ -13,6 +14,7 @@ type GenerationOptions = {
   requiredAnimals?: string[]  // IDs of animals that must be included
   selectedBiomes?: Biome[]  // Focus on these biomes only
   compatibleWithBaseGame?: boolean  // Only use animals with Base Game compatible group sizes
+  preserveNationalParks?: string[]  // IDs of National Parks to preserve
 }
 
 // Simple random number generator from seed
@@ -195,6 +197,15 @@ export function generateBoard(
   const biomeRestricted = options.selectedBiomes && options.selectedBiomes.length > 0 && options.selectedBiomes.length < 6
   const maxAttempts = strict ? (biomeRestricted ? 20000 : 2000) : 300
 
+  // Merge National Park animals with required animals
+  let allRequiredAnimals = options.requiredAnimals || []
+  if (options.preserveNationalParks && options.preserveNationalParks.length > 0) {
+    const parkAnimals = options.preserveNationalParks.flatMap(parkId => 
+      getNationalParkAnimals(parkId)
+    )
+    allRequiredAnimals = [...new Set([...allRequiredAnimals, ...parkAnimals])]
+  }
+
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const board: SelectedBoard = {
       level1: [],
@@ -204,8 +215,8 @@ export function generateBoard(
     }
 
     // Add required animals if specified
-    if (options.requiredAnimals && options.requiredAnimals.length > 0) {
-      for (const animalId of options.requiredAnimals) {
+    if (allRequiredAnimals.length > 0) {
+      for (const animalId of allRequiredAnimals) {
         const animal = allAnimals.find(a => a.id === animalId)
         if (animal) {
           if (animal.level === 1 && board.level1.length < 9) board.level1.push(animal)
@@ -215,7 +226,7 @@ export function generateBoard(
       }
       
       // If required animals don't fit, skip this attempt
-      if (options.requiredAnimals.length > 0 && 
+      if (allRequiredAnimals.length > 0 && 
           (board.level1.length > 9 || board.level2.length > 10 || board.level3.length > 5)) {
         continue
       }
@@ -258,10 +269,10 @@ export function generateBoard(
     let availableLevel3 = filteredAnimals.filter(a => a.level === 3)
 
     // Remove already-selected required animals from available pool
-    if (options.requiredAnimals && options.requiredAnimals.length > 0) {
-      availableLevel1 = availableLevel1.filter(a => !options.requiredAnimals!.includes(a.id))
-      availableLevel2 = availableLevel2.filter(a => !options.requiredAnimals!.includes(a.id))
-      availableLevel3 = availableLevel3.filter(a => !options.requiredAnimals!.includes(a.id))
+    if (allRequiredAnimals.length > 0) {
+      availableLevel1 = availableLevel1.filter(a => !allRequiredAnimals.includes(a.id))
+      availableLevel2 = availableLevel2.filter(a => !allRequiredAnimals.includes(a.id))
+      availableLevel3 = availableLevel3.filter(a => !allRequiredAnimals.includes(a.id))
     }
 
     // Shuffle available animals
