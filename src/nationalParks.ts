@@ -35,6 +35,21 @@ export const nationalParks: NationalPark[] = [
     ]
   },
   {
+    id: 'banff-alt',
+    name: 'Banff (Hard)',
+    game: 'base',
+    biome: 'Montane Forest',
+    requiredAnimals: [
+      'wolf',
+      'wapiti',
+      'common-raccoon',
+      'striped-skunk'
+    ],
+    optionalAnimals: [
+      ['puma', 'american-black-bear']
+    ]
+  },
+  {
     id: 'serengeti',
     name: 'Serengeti National Park',
     game: 'base',
@@ -47,6 +62,21 @@ export const nationalParks: NationalPark[] = [
     optionalAnimals: [
       ['common-ostrich', 'plains-zebra'],
       ['giraffe', 'black-rhinoceros']
+    ]
+  },
+  {
+    id: 'serengeti-alt',
+    name: 'Serengeti National Park (Hard)',
+    game: 'base',
+    biome: 'Savannah',
+    requiredAnimals: [
+      'blue-wildebeest'
+    ],
+    optionalAnimals: [
+      ['common-ostrich', 'plains-zebra'],
+      ['lion', 'cheetah'],
+      ['giraffe', 'black-rhinoceros'],
+      ['fischers-lovebird', 'grey-crowned-crane']
     ]
   },
   {
@@ -75,6 +105,21 @@ export const nationalParks: NationalPark[] = [
   }
   ,
   {
+    id: 'pantanal-alt',
+    name: 'Pantanal Matogrossense (Hard)',
+    game: 'base',
+    biome: 'Rainforest',
+    requiredAnimals: [
+      'jaguar',
+      'giant-anteater',
+      'jabiru'
+    ],
+    optionalAnimals: [
+      ['south-american-tapir', 'capybara'],
+      ['red-and-green-macaw', 'tufted-capuchin']
+    ]
+  },
+  {
     id: 'punta-tombo',
     name: 'Punta Tombo',
     game: 'expansion',
@@ -96,6 +141,20 @@ export const nationalParks: NationalPark[] = [
       'polar-bear',
       'muskox',
       'arctic-fox'
+    ]
+  },
+  {
+    id: 'northeast-greenland-alt',
+    name: 'Northeast Greenland National Park (Hard)',
+    game: 'expansion',
+    biome: 'Tundra & Steppe',
+    requiredAnimals: [
+      'polar-bear',
+      'muskox',
+      'arctic-fox'
+    ],
+    optionalAnimals: [
+      ['snowy-owl', 'atlantic-puffin']
     ]
   },
   {
@@ -137,6 +196,21 @@ export const nationalParks: NationalPark[] = [
       'southern-cassowary',
       'saltwater-crocodile',
       'emu'
+    ]
+  },
+  {
+    id: 'wet-tropics-queensland-alt',
+    name: 'Wet Tropics of Queensland (Hard)',
+    game: 'expansion',
+    biome: 'Dry Forest',
+    requiredAnimals: [
+      'eastern-grey-kangaroo',
+      'koala',
+      'southern-cassowary',
+      'emu'
+    ],
+    optionalAnimals: [
+      ['saltwater-crocodile', 'platypus']
     ]
   }
 ]
