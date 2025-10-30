@@ -1,5 +1,6 @@
 import type { Biome } from '../constants'
 import type { Animal } from '../animals'
+import type { CoSpecies } from '../co-species'
 import { sampleBoards } from '../sampleBoards'
 import animalsData from '../animals'
 
@@ -9,6 +10,7 @@ type ParkGenerationOptions = {
   size?: 4 | 5 // animals per park
   selectedBiomes?: Biome[]
   compatibleWithBaseGame?: boolean
+  availableCoSpecies?: CoSpecies[]
 }
 
 export type GeneratedPark = {
@@ -17,6 +19,7 @@ export type GeneratedPark = {
   biome: Biome
   animalIds: string[]
   score: number
+  coSpeciesIds: string[]
 }
 
 function seededRandom(seed: number) {
@@ -116,26 +119,57 @@ export function generateBalancedParks(
     const shuffled = shuffle(pool, random)
     const pick: Animal[] = []
     const seenCats = new Set<string>()
+    let lockedCount = 0
     for (const a of shuffled) {
       const cats = Array.isArray(a.category) ? a.category : [a.category]
       const addsNew = cats.some(c => !seenCats.has(c))
-      if (addsNew || pick.length < size - 1) {
+      const isLocked = !!(a as any).isPopularityLocked
+      if ((addsNew || pick.length < size - 1) && (lockedCount === 0 || !isLocked)) {
         pick.push(a)
         cats.forEach(c => seenCats.add(c))
+        if (isLocked) lockedCount++
         if (pick.length === size) break
       }
     }
     if (pick.length < size) {
       const remaining = shuffled.filter(a => !pick.includes(a)).slice(0, size - pick.length)
-      pick.push(...remaining)
+      for (const r of remaining) {
+        const isLocked = !!(r as any).isPopularityLocked
+        if (lockedCount >= 1 && isLocked) continue
+        pick.push(r)
+        if (isLocked) lockedCount++
+        if (pick.length === size) break
+      }
     }
 
     if (new Set(pick.map(a => (Array.isArray(a.category) ? a.category : [a.category]).join('|'))).size < 3) return null
 
+    // If the park includes a popularity-locked animal, enforce exactly 4 main species (no co-species)
+    let hasLocked = pick.some(a => !!(a as any).isPopularityLocked)
+    if (hasLocked && pick.length > 4) {
+      // Keep the locked animal and the first other animals until reaching 4 total
+      const locked = pick.find(a => !!(a as any).isPopularityLocked)!
+      const others = pick.filter(a => a !== locked)
+      pick.length = 0
+      pick.push(locked, ...others.slice(0, 3))
+    }
+
     const score = scoreParkAnimals(pick, targetBiome)
+    // Add co-species unless there is a popularity-locked animal
+    hasLocked = pick.some(a => !!(a as any).isPopularityLocked)
+    let coSpeciesIds: string[] = []
+    if (!hasLocked && options.availableCoSpecies && options.availableCoSpecies.length > 0) {
+      const candidates = options.availableCoSpecies.filter(c => {
+        const bs = Array.isArray(c.biome) ? c.biome : [c.biome]
+        return bs.includes(targetBiome)
+      })
+      if (candidates.length > 0) {
+        coSpeciesIds = [candidates[0].id]
+      }
+    }
     const id = `generated-park-${targetBiome}-${Math.floor(random()*1e6)}`
     const name = `Custom Park (${targetBiome})`
-    return { id, name, biome: targetBiome, animalIds: pick.map(a => a.id), score }
+    return { id, name, biome: targetBiome, animalIds: pick.map(a => a.id), score, coSpeciesIds }
   }
 
   const attemptsPerBiome = 8
@@ -149,6 +183,21 @@ export function generateBalancedParks(
       const best = candidates.sort((a, b) => b.score - a.score)[0]
       parks.push(best)
       if (parks.length >= count) break
+    }
+  }
+
+  // Fallback: if we didn't hit the requested count (e.g., due to limited biomes),
+  // keep generating from available biomes allowing repeats until we reach count or exhaust tries
+  if (parks.length < count && biomePool.length > 0) {
+    const extraRounds = 3
+    for (let r = 0; r < extraRounds && parks.length < count; r++) {
+      for (const biome of shuffle(biomePool, random)) {
+        const gp = tryMakePark(biome)
+        if (gp) {
+          parks.push(gp)
+          if (parks.length >= count) break
+        }
+      }
     }
   }
 

@@ -6,7 +6,7 @@ export type NationalPark = {
   game: 'base' | 'expansion'
   biome: Biome
   requiredAnimals: string[] // animal IDs
-  optionalAnimals?: string[][] // alternative animals (OR condition)
+  // All animals are required for parks (no optional picks)
 }
 
 export const nationalParks: NationalPark[] = [
@@ -43,10 +43,9 @@ export const nationalParks: NationalPark[] = [
       'wolf',
       'wapiti',
       'common-raccoon',
-      'striped-skunk'
-    ],
-    optionalAnimals: [
-      ['puma', 'american-black-bear']
+      'striped-skunk',
+      'puma',
+      'american-black-bear'
     ]
   },
   {
@@ -57,11 +56,11 @@ export const nationalParks: NationalPark[] = [
     requiredAnimals: [
       'lion',
       'blue-wildebeest',
-      'fischers-lovebird'
-    ],
-    optionalAnimals: [
-      ['common-ostrich', 'plains-zebra'],
-      ['giraffe', 'black-rhinoceros']
+      'fischers-lovebird',
+      'common-ostrich',
+      'plains-zebra',
+      'giraffe',
+      'black-rhinoceros'
     ]
   },
   {
@@ -70,13 +69,15 @@ export const nationalParks: NationalPark[] = [
     game: 'base',
     biome: 'Savannah',
     requiredAnimals: [
-      'blue-wildebeest'
-    ],
-    optionalAnimals: [
-      ['common-ostrich', 'plains-zebra'],
-      ['lion', 'cheetah'],
-      ['giraffe', 'black-rhinoceros'],
-      ['fischers-lovebird', 'grey-crowned-crane']
+      'blue-wildebeest',
+      'common-ostrich',
+      'plains-zebra',
+      'lion',
+      'cheetah',
+      'giraffe',
+      'black-rhinoceros',
+      'fischers-lovebird',
+      'grey-crowned-crane'
     ]
   },
   {
@@ -112,11 +113,11 @@ export const nationalParks: NationalPark[] = [
     requiredAnimals: [
       'jaguar',
       'giant-anteater',
-      'jabiru'
-    ],
-    optionalAnimals: [
-      ['south-american-tapir', 'capybara'],
-      ['red-and-green-macaw', 'tufted-capuchin']
+      'jabiru',
+      'south-american-tapir',
+      'capybara',
+      'red-and-green-macaw',
+      'tufted-capuchin'
     ]
   },
   {
@@ -126,10 +127,9 @@ export const nationalParks: NationalPark[] = [
     biome: 'Tundra & Steppe',
     requiredAnimals: [
       'puma',
-      'magellanic-penguin'
-    ],
-    optionalAnimals: [
-      ['guanaco', 'nandu']
+      'magellanic-penguin',
+      'guanaco',
+      'nandu'
     ]
   },
   {
@@ -151,10 +151,9 @@ export const nationalParks: NationalPark[] = [
     requiredAnimals: [
       'polar-bear',
       'muskox',
-      'arctic-fox'
-    ],
-    optionalAnimals: [
-      ['snowy-owl', 'atlantic-puffin']
+      'arctic-fox',
+      'snowy-owl',
+      'atlantic-puffin'
     ]
   },
   {
@@ -165,11 +164,11 @@ export const nationalParks: NationalPark[] = [
     requiredAnimals: [
       'chacoan-peccary',
       'giant-anteater',
-      'six-banded-armadillo'
-    ],
-    optionalAnimals: [
-      ['jaguar', 'puma'],
-      ['south-american-tapir', 'capybara']
+      'six-banded-armadillo',
+      'jaguar',
+      'puma',
+      'south-american-tapir',
+      'capybara'
     ]
   },
   {
@@ -207,10 +206,9 @@ export const nationalParks: NationalPark[] = [
       'eastern-grey-kangaroo',
       'koala',
       'southern-cassowary',
-      'emu'
-    ],
-    optionalAnimals: [
-      ['saltwater-crocodile', 'platypus']
+      'emu',
+      'saltwater-crocodile',
+      'platypus'
     ]
   }
 ]
@@ -219,7 +217,7 @@ export function checkNationalParkStatus(
   park: NationalPark,
   boardAnimalIds: Set<string>,
   boardCoSpeciesIds: Set<string>
-): { complete: boolean; missing: string[]; hasOptional: boolean[] } {
+): { complete: boolean; missing: string[] } {
   const allBoardIds = new Set([...boardAnimalIds, ...boardCoSpeciesIds])
   
   // Check required animals
@@ -230,36 +228,15 @@ export function checkNationalParkStatus(
     }
   })
   
-  // Check optional animals (OR conditions)
-  const hasOptional: boolean[] = []
-  if (park.optionalAnimals) {
-    park.optionalAnimals.forEach(alternatives => {
-      const hasAny = alternatives.some(animalId => allBoardIds.has(animalId))
-      hasOptional.push(hasAny)
-      if (!hasAny) {
-        missing.push(`(${alternatives.join(' OR ')})`)
-      }
-    })
-  }
-  
   const complete = missing.length === 0
   
-  return { complete, missing, hasOptional }
+  return { complete, missing }
 }
 
 export function getNationalParkAnimals(parkId: string): string[] {
   const park = nationalParks.find(p => p.id === parkId)
   if (!park) return []
   
-  const animals = [...park.requiredAnimals]
-  
-  // For optional animals, include the first option
-  if (park.optionalAnimals) {
-    park.optionalAnimals.forEach(alternatives => {
-      animals.push(alternatives[0])
-    })
-  }
-  
-  return animals
+  return [...park.requiredAnimals]
 }
 

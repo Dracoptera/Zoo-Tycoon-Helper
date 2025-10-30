@@ -4,7 +4,8 @@ import coSpeciesData from './co-species'
 import type { Animal } from './animals'
 import type { CoSpecies } from './co-species'
 import { type SelectedBoard, validateBoard } from './utils/validation'
-import { generateBoard, getReplacementMappings } from './utils/boardGenerator'
+import * as boardGen from './utils/boardGenerator'
+import { injectPopularityLocked } from './utils/injector'
 import { generateBalancedParks } from './utils/parkGenerator'
 import { biomes } from './constants'
 import type { Biome } from './constants'
@@ -79,10 +80,28 @@ export default function App() {
     setTimeout(() => {
       const allAnimals = animalsData.animals as Animal[]
       const allCoSpecies = coSpeciesData.coSpecies as CoSpecies[]
-      const newBoard = generateBoard(allAnimals, allCoSpecies, {
+      // Pick 1-2 popularity-locked animals up front (matching selected biomes if set)
+      const lockedCandidates = (() => {
+        const locks = allAnimals.filter(a => (a as any).isPopularityLocked)
+        if (selectedBiomes.length === 0) return locks
+        const filtered = locks.filter(a => {
+          const bs = Array.isArray(a.biome) ? a.biome : [a.biome]
+          return bs.some(b => selectedBiomes.includes(b as Biome))
+        })
+        return filtered.length > 0 ? filtered : locks
+      })()
+      const shuffledLocks = [...lockedCandidates].sort(() => Math.random() - 0.5)
+      const howMany = Math.random() < 0.5 ? 1 : 2
+      const pickedLockIds = shuffledLocks.slice(0, howMany).map(a => a.id)
+      const requiredForThisRun = Array.from(new Set([...
+        requiredAnimalIds,
+        ...pickedLockIds
+      ]))
+
+      const newBoard = boardGen.generateBoard(allAnimals, allCoSpecies, {
         seed: Date.now(),
         strict: true,
-        requiredAnimals: requiredAnimalIds,
+        requiredAnimals: requiredForThisRun,
         selectedBiomes: selectedBiomes.length > 0 ? selectedBiomes : undefined,
         preserveNationalParks: preservedNationalParks
       })
@@ -105,7 +124,7 @@ export default function App() {
       const allAnimals = animalsData.animals as Animal[]
       const allCoSpecies = coSpeciesData.coSpecies as CoSpecies[]
       
-      const newBoard = generateBoard(allAnimals, allCoSpecies, {
+      const newBoard = boardGen.generateBoard(allAnimals, allCoSpecies, {
         seed: Date.now(),
         strict: true,
         requiredAnimals: requiredAnimalIds,
@@ -117,7 +136,7 @@ export default function App() {
         setBoard(newBoard)
         
         // Calculate replacement mappings
-        const mappings = getReplacementMappings(newBoard, allAnimals)
+        const mappings = boardGen.getReplacementMappings(newBoard, allAnimals)
         setReplacementMappings(mappings)
         
         // Check which Base Game National Parks are broken
@@ -443,6 +462,7 @@ Co-Species: ${exportData.coSpecies}
            (selectedBiomes.length > 0 && selectedBiomes.length !== 4) ? `Please select exactly 4 biomes (${selectedBiomes.length}/4)` : 
            '⚖️ Generate Balanced Board'}
         </button>
+        
         <button 
           className="primary" 
           onClick={handleGenerateBaseGameCompatible}
@@ -593,6 +613,29 @@ Co-Species: ${exportData.coSpecies}
           <div className="controls">
             <button className="primary" onClick={handleExport}>📋 Copy Board to Clipboard</button>
             <button className="primary" onClick={() => setBoard(null)}>Clear Board</button>
+            <span style={{ marginLeft: 10 }} />
+            <label style={{ marginLeft: 10, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              Inject popularity-locked:
+              <select id="injectCount" defaultValue={"1"} style={{ marginLeft: 6 }}>
+                <option value="1">1</option>
+                <option value="2">2</option>
+              </select>
+            </label>
+            <button
+              className="primary"
+              onClick={() => {
+                if (!board) return
+                const allAnimals = animalsData.animals as Animal[]
+                const selectEl = document.getElementById('injectCount') as HTMLSelectElement | null
+                const count = (selectEl ? parseInt(selectEl.value) : 1) as 1 | 2
+                const newBoard = injectPopularityLocked(board, allAnimals, count, selectedBiomes.length > 0 ? selectedBiomes : undefined)
+                setBoard(newBoard)
+                const validation = validateBoard(newBoard, coSpeciesData.coSpecies as CoSpecies[])
+                setValidationResult(validation)
+              }}
+            >
+              Apply
+            </button>
           </div>
         </>
       )}
@@ -645,6 +688,7 @@ Co-Species: ${exportData.coSpecies}
                 size: parkSize,
                 selectedBiomes: selectedBiomes.length > 0 ? selectedBiomes : undefined,
                 compatibleWithBaseGame: parksCompatible,
+                availableCoSpecies: board.coSpecies as CoSpecies[],
                 seed: Date.now()
               })
               setGeneratedParks(parks)
@@ -674,6 +718,15 @@ Co-Species: ${exportData.coSpecies}
                         <li key={id} style={{ marginBottom: 4 }}>{animalsById.get(id)?.name || id}</li>
                       ))}
                     </ul>
+                    {park.coSpeciesIds && park.coSpeciesIds.length > 0 && (
+                      <div style={{ marginTop: 8 }}>
+                        <strong>Co-species:</strong>{' '}
+                        {park.coSpeciesIds.map((id, i) => {
+                          const name = (coSpeciesData.coSpecies as CoSpecies[]).find(c => c.id === id)?.name || id
+                          return <span key={id}>{i > 0 ? ', ' : ''}{name}</span>
+                        })}
+                      </div>
+                    )}
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 10 }}>
                       <button
                         onClick={() => {
@@ -721,16 +774,39 @@ function LevelSection({ level, animals, max, biomeAssignments }: {
                   gap: '8px',
                   marginTop: '10px'
                 }}>
-                  {biomeAnimals.map((animal, index) => (
-                    <div key={`${animal.id}-${index}`} className="animal-card" style={{ margin: 0 }}>
-                      <div>
-                        <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>{animal.name}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>
-                          {Array.isArray(animal.category) ? animal.category.join(', ') : animal.category}
+                  {biomeAnimals.map((animal, index) => {
+                    const isLocked = (animal as any).isPopularityLocked === true
+                    return (
+                      <div
+                        key={`${animal.id}-${index}`}
+                        className="animal-card"
+                        style={{
+                          margin: 0,
+                          border: isLocked ? '2px solid #e67e22' : undefined
+                        }}
+                      >
+                        <div>
+                          <div style={{ fontWeight: 'bold', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            {animal.name}
+                            {isLocked && (
+                              <span style={{
+                                fontSize: '0.7rem',
+                                background: '#e67e22',
+                                color: 'white',
+                                padding: '2px 6px',
+                                borderRadius: '6px'
+                              }}>
+                                🔒 Popularity Locked
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ fontSize: '0.8rem', color: '#7f8c8d' }}>
+                            {Array.isArray(animal.category) ? animal.category.join(', ') : animal.category}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             ))}

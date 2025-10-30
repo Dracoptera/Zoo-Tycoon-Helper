@@ -15,6 +15,7 @@ type GenerationOptions = {
   selectedBiomes?: Biome[]  // Focus on these biomes only
   compatibleWithBaseGame?: boolean  // Only use animals with Base Game compatible group sizes
   preserveNationalParks?: string[]  // IDs of National Parks to preserve
+  forcePopularityLocked?: boolean  // If true, include up to 2 popularity-locked species
 }
 
 type ParkGenerationOptions = {
@@ -295,6 +296,72 @@ export function getReplacementMappings(
   return replacements
 }
 
+// Try to inject 1-2 popularity-locked animals into an existing board by replacing similar animals
+export function injectPopularityLocked(
+  board: SelectedBoard,
+  allAnimals: Animal[],
+  count: 1 | 2,
+  selectedBiomes?: Biome[]
+): SelectedBoard {
+  const result: SelectedBoard = {
+    level1: [...board.level1],
+    level2: [...board.level2],
+    level3: [...board.level3],
+    coSpecies: [...board.coSpecies],
+    biomeAssignments: board.biomeAssignments ? new Map(board.biomeAssignments) : undefined
+  }
+
+  const existingIds = new Set([...result.level1, ...result.level2, ...result.level3].map(a => a.id))
+  let candidates = (allAnimals as Animal[]).filter((a: any) => a.isPopularityLocked && !existingIds.has(a.id))
+  if (selectedBiomes && selectedBiomes.length > 0) {
+    const filtered = candidates.filter(a => {
+      const bs = Array.isArray(a.biome) ? a.biome : [a.biome]
+      return bs.some(b => selectedBiomes.includes(b))
+    })
+    if (filtered.length > 0) candidates = filtered
+  }
+
+  const take = (n: number) => {
+    const picked: Animal[] = []
+    const seenLevels = new Map<number, number>()
+    for (const c of candidates) {
+      picked.push(c)
+      seenLevels.set(c.level, (seenLevels.get(c.level) || 0) + 1)
+      if (picked.length >= n) break
+    }
+    return picked
+  }
+
+  const toInject = take(count)
+  for (const cand of toInject) {
+    const levelArray = cand.level === 1 ? result.level1 : cand.level === 2 ? result.level2 : result.level3
+    // Find best replacement: same biome overlap and not popularity-locked
+    const candBiomes = Array.isArray(cand.biome) ? cand.biome : [cand.biome]
+    let idx = levelArray.findIndex((a: any) => {
+      if (a.isPopularityLocked) return false
+      const bs = Array.isArray(a.biome) ? a.biome : [a.biome]
+      return bs.some(b => candBiomes.includes(b))
+    })
+    if (idx === -1) {
+      idx = levelArray.findIndex((a: any) => !a.isPopularityLocked)
+    }
+    if (idx !== -1) {
+      levelArray[idx] = cand
+    } else if (cand.level === 1 && levelArray.length < 9) {
+      levelArray.push(cand)
+    } else if (cand.level === 2 && levelArray.length < 10) {
+      levelArray.push(cand)
+    } else if (cand.level === 3 && levelArray.length < 5) {
+      levelArray.push(cand)
+    }
+  }
+
+  return result
+}
+
+// Ensure named export visibility for bundlers
+export { injectPopularityLocked }
+
 function meetsRequirement(animal: Animal, selectedAnimals: Animal[]): boolean {
   if (!animal.requirement) return true
   
@@ -341,6 +408,35 @@ export function generateBoard(
     allRequiredAnimals = [...new Set([...allRequiredAnimals, ...parkAnimals])]
   }
 
+  // If forcing popularity-locked species, add up to 2 that fit current biome selection (if any)
+  const forceLocked = options.forcePopularityLocked ?? true
+  if (forceLocked) {
+    const isBiomeSelected = options.selectedBiomes && options.selectedBiomes.length > 0
+    let lockedCandidates = animalsData.animals.filter((a: any) => {
+      if (!a.isPopularityLocked) return false
+      if (!isBiomeSelected) return true
+      const bs = Array.isArray(a.biome) ? a.biome : [a.biome]
+      return bs.some(b => options.selectedBiomes!.includes(b))
+    }) as Animal[]
+    // If none match the selected biomes, fall back to any popularity-locked species
+    if (lockedCandidates.length === 0) {
+      lockedCandidates = (animalsData.animals as Animal[]).filter((a: any) => a.isPopularityLocked)
+    }
+    // Prefer diversity: pick different biomes first
+    const picked: string[] = []
+    const seenBiomes = new Set<string>()
+    for (const a of lockedCandidates) {
+      const bs = Array.isArray(a.biome) ? a.biome : [a.biome]
+      const preferred = bs.find(b => !seenBiomes.has(b))
+      if (preferred || picked.length === 0) {
+        picked.push(a.id)
+        if (preferred) seenBiomes.add(preferred)
+      }
+      if (picked.length >= 2) break
+    }
+    allRequiredAnimals = [...new Set([...allRequiredAnimals, ...picked])]
+  }
+
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const board: SelectedBoard = {
       level1: [],
@@ -364,6 +460,30 @@ export function generateBoard(
       if (allRequiredAnimals.length > 0 && 
           (board.level1.length > 9 || board.level2.length > 10 || board.level3.length > 5)) {
         continue
+      }
+    }
+
+    // Upfront seed: always try to include 1 popularity-locked animal (and at most 2 later) by placing it now
+    if (forceLocked) {
+      const isBiomeSelected = options.selectedBiomes && options.selectedBiomes.length > 0
+      let lockedSeed = (animalsData.animals as Animal[]).filter((a: any) => a.isPopularityLocked) as Animal[]
+      if (isBiomeSelected) {
+        const filtered = lockedSeed.filter(a => {
+          const bs = Array.isArray(a.biome) ? a.biome : [a.biome]
+          return bs.some(b => options.selectedBiomes!.includes(b))
+        })
+        if (filtered.length > 0) lockedSeed = filtered
+      }
+      lockedSeed = shuffle(lockedSeed, random)
+      const seed = lockedSeed[0]
+      if (seed) {
+        const levelArray = seed.level === 1 ? board.level1 : seed.level === 2 ? board.level2 : board.level3
+        const cap = seed.level === 1 ? 9 : seed.level === 2 ? 10 : 5
+        if (!levelArray.some(a => a.id === seed.id)) {
+          if (levelArray.length < cap) {
+            levelArray.push(seed)
+          }
+        }
       }
     }
 
@@ -403,12 +523,18 @@ export function generateBoard(
     let availableLevel2 = filteredAnimals.filter(a => a.level === 2)
     let availableLevel3 = filteredAnimals.filter(a => a.level === 3)
 
+    // Remove already-seeded popularity-locked (or required) animals from available pool
     // Remove already-selected required animals from available pool
     if (allRequiredAnimals.length > 0) {
       availableLevel1 = availableLevel1.filter(a => !allRequiredAnimals.includes(a.id))
       availableLevel2 = availableLevel2.filter(a => !allRequiredAnimals.includes(a.id))
       availableLevel3 = availableLevel3.filter(a => !allRequiredAnimals.includes(a.id))
     }
+    // Also remove any already on the board
+    const existingIds = new Set([...board.level1, ...board.level2, ...board.level3].map(a => a.id))
+    availableLevel1 = availableLevel1.filter(a => !existingIds.has(a.id))
+    availableLevel2 = availableLevel2.filter(a => !existingIds.has(a.id))
+    availableLevel3 = availableLevel3.filter(a => !existingIds.has(a.id))
 
     // Shuffle available animals
     availableLevel1 = shuffle(availableLevel1, random)
@@ -640,8 +766,103 @@ export function generateBoard(
     // Store biome assignments in board
     board.biomeAssignments = biomeAssignments
 
+    // If forcing popularity-locked, top-up (or swap) to ensure 1-2 are present
+    if (forceLocked) {
+      let lockedCount = [...board.level1, ...board.level2, ...board.level3].filter((a: any) => a.isPopularityLocked).length
+      const targetLocked = 1 // ensure at least one popularity-locked species
+      if (lockedCount < targetLocked) {
+        const isBiomeSelected = options.selectedBiomes && options.selectedBiomes.length > 0
+        let candidates = (animalsData.animals as Animal[]).filter((a: any) => a.isPopularityLocked) as Animal[]
+        if (isBiomeSelected) {
+          const filtered = candidates.filter(a => {
+            const bs = Array.isArray(a.biome) ? a.biome : [a.biome]
+            return bs.some(b => options.selectedBiomes!.includes(b))
+          })
+          if (filtered.length > 0) candidates = filtered
+        }
+        // Remove ones already in board
+        const existingIds = new Set([...board.level1, ...board.level2, ...board.level3].map(a => a.id))
+        candidates = shuffle(candidates.filter(a => !existingIds.has(a.id)), random)
+
+        // Try to insert by level with push or swap
+        for (const cand of candidates) {
+          if (lockedCount >= targetLocked) break
+          if (cand.level === 1) {
+            if (board.level1.length < 9) {
+              board.level1.push(cand)
+              lockedCount++
+            } else {
+              // swap a non-locked
+              const idx = board.level1.findIndex((a: any) => !a.isPopularityLocked)
+              if (idx !== -1) {
+                board.level1[idx] = cand
+                lockedCount++
+              }
+            }
+          } else if (cand.level === 2) {
+            if (board.level2.length < 10) {
+              board.level2.push(cand)
+              lockedCount++
+            } else {
+              const idx = board.level2.findIndex((a: any) => !a.isPopularityLocked)
+              if (idx !== -1) {
+                board.level2[idx] = cand
+                lockedCount++
+              }
+            }
+          } else {
+            if (board.level3.length < 5) {
+              board.level3.push(cand)
+              lockedCount++
+            } else {
+              const idx = board.level3.findIndex((a: any) => !a.isPopularityLocked)
+              if (idx !== -1) {
+                board.level3[idx] = cand
+                lockedCount++
+              }
+            }
+          }
+        }
+      }
+    }
+
     // Validate the board - pass available co-species when biomes are restricted
-    const validation = validateBoard(board, biomeRestricted ? filteredCoSpecies : undefined)
+    let validation = validateBoard(board, biomeRestricted ? filteredCoSpecies : undefined)
+    // FINAL GUARANTEE: if forcing locked and none present, inject one now via swap and revalidate
+    if (forceLocked) {
+      let lockedCountFinal = [...board.level1, ...board.level2, ...board.level3].filter((a: any) => a.isPopularityLocked).length
+      if (lockedCountFinal < 1) {
+        // pick a locked candidate matching selected biomes if possible
+        const isBiomeSelected = options.selectedBiomes && options.selectedBiomes.length > 0
+        let candLocked = (animalsData.animals as Animal[]).filter((a: any) => a.isPopularityLocked) as Animal[]
+        if (isBiomeSelected) {
+          const filtered = candLocked.filter(a => {
+            const bs = Array.isArray(a.biome) ? a.biome : [a.biome]
+            return bs.some(b => options.selectedBiomes!.includes(b))
+          })
+          if (filtered.length > 0) candLocked = filtered
+        }
+        // prefer not already present
+        const existingIds2 = new Set([...board.level1, ...board.level2, ...board.level3].map(a => a.id))
+        candLocked = shuffle(candLocked.filter(a => !existingIds2.has(a.id)), random)
+        const cand = candLocked[0]
+        if (cand) {
+          const levelArray = cand.level === 1 ? board.level1 : cand.level === 2 ? board.level2 : board.level3
+          // swap out a non-locked, prefer same-biome
+          const candBiomes = Array.isArray(cand.biome) ? cand.biome : [cand.biome]
+          let idxSwap = levelArray.findIndex((a: any) => {
+            if (a.isPopularityLocked) return false
+            const bs = Array.isArray(a.biome) ? a.biome : [a.biome]
+            return bs.some(b => candBiomes.includes(b))
+          })
+          if (idxSwap === -1) idxSwap = levelArray.findIndex((a: any) => !a.isPopularityLocked)
+          if (idxSwap !== -1) {
+            levelArray[idxSwap] = cand
+            validation = validateBoard(board, biomeRestricted ? filteredCoSpecies : undefined)
+          }
+        }
+      }
+    }
     if (validation.valid) {
       // Separate critical and non-critical warnings
       // When biomes are restricted, "viability" warnings are expected - ignore them
